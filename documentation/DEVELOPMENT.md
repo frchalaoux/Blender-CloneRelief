@@ -1,0 +1,100 @@
+# Développement
+
+## Environnement de référence
+
+- Blender **4.5.8 LTS** sur macOS Intel.
+- Python embarqué dans Blender sur le poste de référence : **3.11.11**.
+- Les modules `src/clone_relief/geometry.py` et `relief.py` n’importent pas
+  `bpy` et n’ont pas de dépendance externe à l’exécution.
+- Les tests pytest sont prévus pour Python 3.11, séparément du Python embarqué
+  dans Blender. Ne pas supposer que les deux exécutables sont le même.
+
+## Installer et lancer les tests
+
+Depuis la racine du projet avec Python 3.11 :
+
+```bash
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e '.[test]'
+python -m pytest -q
+```
+
+## Architecture actuelle
+
+- `geometry.py` contient les structures `MeshPatch` et `TangentFrame`, les
+  normales, le repère local, le graphe du patch et le masque de fondu.
+- `relief.py` extrait un résidu normal par rapport à une référence lissée
+  Taubin, construit un BVH 2D pour l’interpolation barycentrique, puis calcule
+  les coordonnées résultantes sans modifier les entrées.
+- `density.py` compare les médianes d’arêtes source/cible et estime une borne
+  haute du nombre de faces après subdivision locale, sans dépendance à Blender.
+- `blender_adapter.py` capture une sélection BMesh connectée, la compacte en
+  données neutres et valide la topologie au moyen d’une empreinte du maillage.
+- `operators.py` expose capture, Apply, diagnostic de résolution et subdivision
+  locale confirmée en Edit Mode; `ui.py` relie ces actions au panneau N.
+- `tests/` vérifie les cas géométriques synthétiques sans Blender.
+- `scripts/blender_smoke_test.py` vérifie le parcours Blender avec un objet
+  synthétique sans toucher au scan.
+- L’aperçu non destructif reste à implémenter.
+
+## Diagnostic et densification locale (M3)
+
+- Capturer une source et une cible distinctes sur le même maillage avant le
+  diagnostic ou la subdivision.
+- La résolution cible est comparée à la médiane des longueurs d’arêtes source.
+  Le 90e percentile des arêtes cible déclenche une alerte au-delà de `1,5×`;
+  le nombre de coupes recommandé ramène ce percentile à la taille médiane
+  source. Ce seuil est un indicateur initial, pas une garantie de fidélité.
+- `clone_relief.diagnose_resolution` ne modifie rien. La commande
+  `clone_relief.subdivide_target` ouvre une boîte de confirmation indiquant la
+  résolution, le nombre de coupes et une borne haute prudente du nombre de
+  faces. La limite initiale est de 250 000 faces ajoutées et les coupes sont
+  bornées à 8; l’utilisateur peut ajuster la limite dans la boîte.
+- La subdivision reprend les arêtes de toutes les faces cible et utilise le
+  remplissage en grille de BMesh. Elle conserve les coordonnées des bords,
+  tandis que les faces adjacentes partageant un bord cible peuvent être
+  subdivisées pour garder le maillage connecté. Les captures sont invalidées
+  après le changement topologique; il faut recapturer source et cible.
+- Le plafond de coût est une borne estimée, particulièrement prudente pour les
+  polygones de plus de trois côtés. La commande n’est pas évaluée sur des scans
+  volumineux ni sur le scan Pika.
+
+Le BVH est construit une fois par application, puis réutilisé pour les
+échantillons de la cible. Le fondu utilise des distances Dijkstra sur les
+arêtes du patch. La largeur de fondu est une fraction de `sqrt(surface_area)`.
+Le paramètre d’échelle multiplie la taille physique du motif : `2.0` double sa
+longueur d’onde.
+
+## Limites connues
+
+- Le repère initial suit les axes du monde et n’a pas encore de rotation
+  réglable.
+- Aucun relief n’est extrapolé hors de la couverture 2D de la source.
+- Les détails transférés sont un motif plausible, pas les détails originaux
+  absents du scan.
+- Les zones très courbes ou distordues peuvent mal se projeter dans un repère
+  tangent unique.
+- Une cible sous-échantillonnée ne peut pas représenter finement le motif; la
+  densification locale M3 existe, mais n’a pas encore été éprouvée sur un grand
+  scan réel.
+- Le noyau n’a pas encore été validé sur la courge scannée ni qualifié pour
+  l’impression 3D.
+
+## Smoke test Blender
+
+Avec Blender 4.5.8 installé dans `/Applications/Blender.app` :
+
+```bash
+"/Applications/Blender.app/Contents/MacOS/Blender" --background --factory-startup --python scripts/blender_smoke_test.py
+```
+
+Le script vérifie la capture source/cible, l’invalidation d’une capture après
+changement topologique, le déplacement limité à la cible et le retour exact des
+coordonnées avec Undo. Il vérifie aussi le diagnostic, le refus d’un coût
+au-dessus du plafond, une subdivision triangulée locale raccordée, la
+conservation des bords et de la source, puis Undo exact de la topologie. Les
+captures résident en mémoire pour la session Blender; elles sont invalidées
+quand l’empreinte de topologie change. Cette
+empreinte parcourt tout le maillage à chaque capture/apply, ce qui peut coûter
+du temps sur des scans de plusieurs millions de faces.

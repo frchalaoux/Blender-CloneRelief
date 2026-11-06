@@ -1,0 +1,11 @@
+.venv/
+.vscode/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.blend1
+dist/
+build/
+*.egg-info/
+.DS_Store
+documentation/SCAN_WORKFLOW_HANDOFF.md
