@@ -3,7 +3,7 @@
 import bpy
 import bmesh
 from bpy.app.handlers import persistent
-from bpy.props import EnumProperty, FloatProperty, IntProperty
+from bpy.props import EnumProperty, FloatProperty, IntProperty, StringProperty
 from mathutils import Vector
 from textwrap import wrap
 
@@ -21,6 +21,17 @@ from .relief import apply_relief, extract_relief
 
 _SOURCE_CAPTURE: CapturedSelection | None = None
 _TARGET_CAPTURE: CapturedSelection | None = None
+_COMPARISON_COLLECTION_NAME = "Clone Relief Comparison (display only)"
+_COMPONENT_INSPECTION_ITEMS: list[tuple[str, str, str]] = []
+_COMPONENT_INSPECTION_CACHE: tuple[int, str, tuple[tuple[int, ...], ...]] | None = None
+
+
+def _component_inspection_items(
+    _operator: bpy.types.Operator,
+    _context: bpy.types.Context,
+) -> list[tuple[str, str, str]]:
+    """Keep dynamic component enum strings alive for Blender's RNA property."""
+    return _COMPONENT_INSPECTION_ITEMS or [("0", "Aucune composante chargée", "")]
 
 
 def _operator_is_registered(operator_class: type[bpy.types.Operator]) -> bool:
@@ -83,6 +94,47 @@ def _capture_component_note(capture: CapturedSelection) -> tuple[str, str]:
         f"sur {ignored_groups} {group_word} {disconnected_word}. Vérifie la sélection.",
         "WARNING",
     )
+
+
+def _select_face_indices(
+    context: bpy.types.Context,
+    obj: bpy.types.Object,
+    bm: bmesh.types.BMesh,
+    face_indices: tuple[int, ...],
+) -> None:
+    """Replace the current Edit Mode selection with the requested faces."""
+    context.tool_settings.mesh_select_mode = (False, False, True)
+    for face in bm.faces:
+        if face.select:
+            face.select_set(False)
+    for edge in bm.edges:
+        if edge.select:
+            edge.select_set(False)
+    for vertex in bm.verts:
+        if vertex.select:
+            vertex.select_set(False)
+    for index in face_indices:
+        bm.faces[index].select_set(True)
+    bm.select_flush_mode()
+    bmesh.update_edit_mesh(obj.data, loop_triangles=False, destructive=False)
+    screen = getattr(context, "screen", None)
+    if screen is not None:
+        for area in screen.areas:
+            if area.type == "VIEW_3D":
+                area.tag_redraw()
+
+
+def _restore_captured_face_selection(
+    context: bpy.types.Context,
+    capture: CapturedSelection | None,
+    role_label: str,
+) -> None:
+    """Restore a captured face region as the current Edit Mode selection."""
+    if capture is None:
+        raise ValueError(f"Aucune sélection {role_label} capturée dans cette session.")
+    obj, bm = active_edit_mesh(context)
+    validate_capture(capture, obj, bm)
+    _select_face_indices(context, obj, bm, capture.face_indices)
 
 
 def _format_displacement(context: bpy.types.Context, value: float) -> str:
@@ -447,6 +499,72 @@ class CLONERELIEF_OT_capture_target(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class CLONERELIEF_OT_restore_source_selection(bpy.types.Operator):
+    """Reselect the source faces saved by Capture Source."""
+
+    bl_idname = "clone_relief.restore_source_selection"
+    bl_label = "Reselect Captured Source"
+    bl_description = "Restore the captured source faces as the current selection"
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        obj = context.edit_object
+        return (
+            _SOURCE_CAPTURE is not None
+            and obj is not None
+            and obj.type == "MESH"
+            and obj.as_pointer() == _SOURCE_CAPTURE.object_pointer
+        )
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        try:
+            _restore_captured_face_selection(context, _SOURCE_CAPTURE, "source")
+        except (ValueError, RuntimeError) as error:
+            _set_ui_status(context, message=f"Sélection source non rétablie : {error}", level="ERROR")
+            self.report({"ERROR"}, "Sélection source non rétablie. Consultez Clone Relief.")
+            return {"CANCELLED"}
+        _set_ui_status(
+            context,
+            message="Sélection source rétablie depuis sa capture. La géométrie n’a pas été modifiée.",
+            level="INFO",
+        )
+        self.report({"INFO"}, "Sélection source rétablie.")
+        return {"FINISHED"}
+
+
+class CLONERELIEF_OT_restore_target_selection(bpy.types.Operator):
+    """Reselect the target faces saved by Capture Target."""
+
+    bl_idname = "clone_relief.restore_target_selection"
+    bl_label = "Reselect Captured Target"
+    bl_description = "Restore the captured target faces as the current selection"
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        obj = context.edit_object
+        return (
+            _TARGET_CAPTURE is not None
+            and obj is not None
+            and obj.type == "MESH"
+            and obj.as_pointer() == _TARGET_CAPTURE.object_pointer
+        )
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        try:
+            _restore_captured_face_selection(context, _TARGET_CAPTURE, "cible")
+        except (ValueError, RuntimeError) as error:
+            _set_ui_status(context, message=f"Sélection cible non rétablie : {error}", level="ERROR")
+            self.report({"ERROR"}, "Sélection cible non rétablie. Consultez Clone Relief.")
+            return {"CANCELLED"}
+        _set_ui_status(
+            context,
+            message="Sélection cible rétablie depuis sa capture. La géométrie n’a pas été modifiée.",
+            level="INFO",
+        )
+        self.report({"INFO"}, "Sélection cible rétablie.")
+        return {"FINISHED"}
+
+
 class CLONERELIEF_OT_apply(bpy.types.Operator):
     """Apply captured source relief to the captured target in one undo step."""
 
@@ -526,6 +644,441 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
             level=level,
         )
         self.report({report_level}, "Apply Relief terminé. Consultez le résultat détaillé dans Clone Relief.")
+        return {"FINISHED"}
+
+
+def _connected_face_components(
+    bm: bmesh.types.BMesh,
+) -> tuple[tuple[int, ...], ...]:
+    """Return face-index groups connected by shared mesh edges, largest first."""
+    bm.faces.index_update()
+    unseen = set(bm.faces)
+    components: list[tuple[int, ...]] = []
+    while unseen:
+        stack = [unseen.pop()]
+        component: list[int] = []
+        while stack:
+            face = stack.pop()
+            component.append(face.index)
+            for edge in face.edges:
+                for linked_face in edge.link_faces:
+                    if linked_face in unseen:
+                        unseen.remove(linked_face)
+                        stack.append(linked_face)
+        components.append(tuple(component))
+    return tuple(sorted(components, key=len, reverse=True))
+
+
+def _mesh_integrity_summary(obj: bpy.types.Object) -> dict[str, object]:
+    """Collect inexpensive topology indicators without changing the mesh."""
+    owns_bmesh = obj.mode != "EDIT"
+    bm = bmesh.new() if owns_bmesh else bmesh.from_edit_mesh(obj.data)
+    if owns_bmesh:
+        bm.from_mesh(obj.data)
+    try:
+        bm.verts.ensure_lookup_table()
+        bm.edges.ensure_lookup_table()
+        bm.faces.ensure_lookup_table()
+        boundary_edges = sum(edge.is_boundary for edge in bm.edges)
+        wire_edges = sum(edge.is_wire for edge in bm.edges)
+        nonmanifold_edges = sum(
+            not edge.is_manifold and not edge.is_boundary and not edge.is_wire
+            for edge in bm.edges
+        )
+        nonmanifold_vertices = sum(not vertex.is_manifold for vertex in bm.verts)
+        isolated_vertices = sum(not vertex.link_edges for vertex in bm.verts)
+        degenerate_faces = sum(face.calc_area() <= 1e-18 for face in bm.faces)
+
+        component_indices = _connected_face_components(bm)
+
+        return {
+            "vertices": len(bm.verts),
+            "edges": len(bm.edges),
+            "faces": len(bm.faces),
+            "components": tuple(len(component) for component in component_indices),
+            "boundary_edges": boundary_edges,
+            "wire_edges": wire_edges,
+            "nonmanifold_edges": nonmanifold_edges,
+            "nonmanifold_vertices": nonmanifold_vertices,
+            "isolated_vertices": isolated_vertices,
+            "degenerate_faces": degenerate_faces,
+        }
+    finally:
+        if owns_bmesh:
+            bm.free()
+
+
+class CLONERELIEF_OT_check_printability(bpy.types.Operator):
+    """Report mesh continuity and manifold indicators without modifying it."""
+
+    bl_idname = "clone_relief.check_printability"
+    bl_label = "Check Mesh for 3D Printing"
+    bl_description = "Report disconnected parts, open edges, non-manifold geometry, and degenerate faces"
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        obj = context.edit_object or context.active_object
+        return obj is not None and obj.type == "MESH"
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        obj = context.edit_object or context.active_object
+        if obj is None or obj.type != "MESH":
+            return {"CANCELLED"}
+        try:
+            report = _mesh_integrity_summary(obj)
+        except (RuntimeError, ValueError) as error:
+            _set_ui_status(context, message=f"Contrôle topologique impossible : {error}", level="ERROR")
+            self.report({"ERROR"}, "Contrôle impossible. Consultez le panneau Clone Relief.")
+            return {"CANCELLED"}
+
+        components = report["components"]
+        assert isinstance(components, tuple)
+        component_text = ", ".join(f"{count:,}".replace(",", " ") for count in components[:5])
+        if len(components) > 5:
+            component_text += ", …"
+        issues = any(
+            report[key]
+            for key in (
+                "boundary_edges",
+                "wire_edges",
+                "nonmanifold_edges",
+                "nonmanifold_vertices",
+                "isolated_vertices",
+                "degenerate_faces",
+            )
+        )
+        level = "ERROR" if issues else "WARNING" if len(components) > 1 else "INFO"
+        message = (
+            f"Contrôle topologique — {obj.name} : "
+            f"{report['vertices']:,} sommets, {report['edges']:,} arêtes, "
+            f"{report['faces']:,} faces. ".replace(",", " ")
+            + f"Composantes reliées par arêtes : {len(components)}"
+            + (f" ({component_text} faces). " if component_text else ". ")
+            + f"Bords : {report['boundary_edges']}; arêtes filaires : {report['wire_edges']}; "
+            + f"arêtes non-manifold : {report['nonmanifold_edges']}; "
+            + f"sommets non-manifold : {report['nonmanifold_vertices']}; "
+            + f"sommets isolés : {report['isolated_vertices']}; "
+            + f"faces dégénérées : {report['degenerate_faces']}. "
+            + "Les auto-intersections et surfaces internes ne sont pas contrôlées."
+        )
+        if not issues and len(components) == 1:
+            message = "Aucun défaut topologique détecté. " + message
+        elif not issues:
+            message = "Topologie des arêtes fermée; plusieurs composantes séparées à examiner. " + message
+        _set_ui_status(context, message=message, level=level)
+        self.report({level}, "Contrôle terminé. Consultez le panneau Clone Relief.")
+        return {"FINISHED"}
+
+
+class CLONERELIEF_OT_inspect_component(bpy.types.Operator):
+    """Select and frame one disconnected face component for visual inspection."""
+
+    bl_idname = "clone_relief.inspect_component"
+    bl_label = "Locate Mesh Component"
+    bl_description = "Select one disconnected component by face count and center the 3D view on it"
+
+    component: EnumProperty(name="Composante", items=_component_inspection_items)
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        return context.edit_object is not None and context.edit_object.type == "MESH"
+
+    def invoke(self, context: bpy.types.Context, _event: bpy.types.Event) -> set[str]:
+        global _COMPONENT_INSPECTION_CACHE
+        try:
+            obj, bm = active_edit_mesh(context)
+            components = _connected_face_components(bm)
+            if len(components) < 2:
+                self.report({"INFO"}, "Aucune composante séparée à localiser.")
+                return {"CANCELLED"}
+            signature = topology_signature(bm)
+        except (ValueError, RuntimeError) as error:
+            self.report({"ERROR"}, f"Localisation impossible : {error}")
+            return {"CANCELLED"}
+
+        _COMPONENT_INSPECTION_CACHE = (obj.as_pointer(), signature, components)
+        _COMPONENT_INSPECTION_ITEMS[:] = [
+            (
+                str(index),
+                f"Composante {index + 1} — {len(face_indices):,} faces".replace(",", " "),
+                f"Sélectionner et cadrer {len(face_indices):,} faces reliées par des arêtes".replace(",", " "),
+            )
+            for index, face_indices in enumerate(components)
+        ]
+        self.component = "1"
+        return context.window_manager.invoke_props_dialog(self, width=360)
+
+    def draw(self, _context: bpy.types.Context) -> None:
+        layout = self.layout
+        layout.label(text="Choisis une composante; la vue sera cadrée sur sa sélection.")
+        layout.prop(self, "component", text="")
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        cache = _COMPONENT_INSPECTION_CACHE
+        if cache is None:
+            self.report({"ERROR"}, "Relance la localisation des composantes.")
+            return {"CANCELLED"}
+        try:
+            obj, bm = active_edit_mesh(context)
+            if obj.as_pointer() != cache[0] or topology_signature(bm) != cache[1]:
+                raise ValueError("L’objet ou sa topologie a changé; relance le contrôle.")
+            component_index = int(self.component)
+            face_indices = cache[2][component_index]
+            _select_face_indices(context, obj, bm, face_indices)
+        except (IndexError, ValueError, RuntimeError) as error:
+            self.report({"ERROR"}, f"Composante non sélectionnée : {error}")
+            return {"CANCELLED"}
+
+        framed = False
+        screen = getattr(context, "screen", None)
+        if screen is not None:
+            area = context.area if context.area and context.area.type == "VIEW_3D" else next(
+                (area for area in screen.areas if area.type == "VIEW_3D"),
+                None,
+            )
+            region = next((region for region in area.regions if region.type == "WINDOW"), None) if area else None
+            if area is not None and region is not None:
+                try:
+                    with context.temp_override(area=area, region=region):
+                        framed = "FINISHED" in bpy.ops.view3d.view_selected(use_all_regions=False)
+                except (RuntimeError, TypeError):
+                    framed = False
+
+        count = len(face_indices)
+        message = (
+            f"Composante {component_index + 1}/{len(cache[2])} sélectionnée : {count:,} faces. "
+            .replace(",", " ")
+            + ("Vue cadrée sur la composante. " if framed else "Sélection faite; centre la vue sur elle si nécessaire. ")
+            + "Aucune géométrie n’a été modifiée."
+        )
+        _set_ui_status(context, message=message, level="INFO")
+        self.report({"INFO"}, f"Composante sélectionnée : {count:,} faces.".replace(",", " "))
+        return {"FINISHED"}
+
+
+def _remove_comparison(context: bpy.types.Context) -> bool:
+    """Remove generated comparison meshes and restore their source object."""
+    collection = bpy.data.collections.get(_COMPARISON_COLLECTION_NAME)
+    if collection is None:
+        return False
+    work_object = bpy.data.objects.get(str(collection.get("work_object", "")))
+    was_hidden = bool(collection.get("work_was_hidden", False))
+    work_mode = str(collection.get("work_mode", "OBJECT"))
+    if work_object is not None:
+        work_object.hide_set(was_hidden)
+    for obj in tuple(collection.objects):
+        if obj.get("clone_relief_comparison", False):
+            mesh = obj.data if obj.type == "MESH" else None
+            bpy.data.objects.remove(obj, do_unlink=True)
+            if mesh is not None and mesh.users == 0:
+                bpy.data.meshes.remove(mesh)
+    if not collection.objects:
+        bpy.data.collections.remove(collection)
+    if work_object is not None and not was_hidden:
+        work_object.select_set(True)
+        context.view_layer.objects.active = work_object
+        if work_mode != "OBJECT" and work_object.mode == "OBJECT":
+            try:
+                bpy.ops.object.mode_set(mode=work_mode)
+            except RuntimeError:
+                pass
+    return True
+
+
+class CLONERELIEF_OT_compare_target(bpy.types.Operator):
+    """Show captured target baseline and current result as temporary meshes."""
+
+    bl_idname = "clone_relief.compare_target"
+    bl_label = "Compare Target Before and After"
+    bl_description = "Create temporary side-by-side meshes from the captured target baseline and current result"
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        return context.edit_object is not None and context.edit_object.type == "MESH"
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        if _TARGET_CAPTURE is None:
+            self.report({"ERROR"}, "Capture Target before creating a comparison.")
+            return {"CANCELLED"}
+        try:
+            obj, bm = active_edit_mesh(context)
+            validate_capture(_TARGET_CAPTURE, obj, bm)
+        except (ValueError, RuntimeError) as error:
+            _set_ui_status(context, message=f"Comparaison impossible : {error}", level="ERROR")
+            self.report({"ERROR"}, "Comparaison impossible. Consultez le panneau Clone Relief.")
+            return {"CANCELLED"}
+
+        if bpy.data.collections.get(_COMPARISON_COLLECTION_NAME) is not None:
+            _remove_comparison(context)
+            _set_ui_status(
+                context,
+                message="Comparaison précédente effacée. Relancez la commande pour la recréer.",
+                level="INFO",
+            )
+            return {"FINISHED"}
+
+        capture = _TARGET_CAPTURE
+        world_matrix = obj.matrix_world
+        after_vertices = tuple(
+            tuple(float(value) for value in (world_matrix @ bm.verts[index].co))
+            for index in capture.vertex_indices
+        )
+        before_vertices = capture.vertices_world
+        differences = tuple(
+            (Vector(after) - Vector(before)).length
+            for before, after in zip(before_vertices, after_vertices)
+        )
+        moved = sum(value > 1e-12 for value in differences)
+        if moved == 0:
+            _set_ui_status(
+                context,
+                message="La cible correspond encore à sa référence; appliquez un relief avant de comparer.",
+                level="WARNING",
+            )
+            self.report({"WARNING"}, "Aucun changement à comparer.")
+            return {"CANCELLED"}
+
+        bpy.ops.object.mode_set(mode="OBJECT")
+        collection = bpy.data.collections.new(_COMPARISON_COLLECTION_NAME)
+        context.scene.collection.children.link(collection)
+        collection["work_object"] = obj.name
+        collection["work_was_hidden"] = obj.hide_get()
+        collection["work_mode"] = "EDIT"
+
+        minimum = tuple(min(point[axis] for point in before_vertices) for axis in range(3))
+        maximum = tuple(max(point[axis] for point in before_vertices) for axis in range(3))
+        axis = max(range(3), key=lambda index: maximum[index] - minimum[index])
+        span = max(maximum[axis] - minimum[axis], 1e-4)
+        center = tuple((minimum[index] + maximum[index]) * 0.5 for index in range(3))
+        offset = span * 1.5
+        before_shift = tuple(-(offset if i == axis else 0.0) for i in range(3))
+        after_shift = tuple(offset if i == axis else 0.0 for i in range(3))
+
+        for name, points, shift in (
+            ("Before - captured target", before_vertices, before_shift),
+            ("After - current target", after_vertices, after_shift),
+        ):
+            mesh = bpy.data.meshes.new(f"{name} Mesh")
+            mesh.from_pydata(
+                [tuple(point[i] - center[i] + shift[i] for i in range(3)) for point in points],
+                [],
+                capture.faces,
+            )
+            mesh.update()
+            comparison_obj = bpy.data.objects.new(name, mesh)
+            collection.objects.link(comparison_obj)
+            comparison_obj.location = center
+            comparison_obj.hide_render = True
+            comparison_obj["clone_relief_comparison"] = True
+
+        obj.hide_set(True)
+        bpy.ops.object.select_all(action="DESELECT")
+        for name in ("Before - captured target", "After - current target"):
+            bpy.data.objects[name].select_set(True)
+        context.view_layer.objects.active = bpy.data.objects["After - current target"]
+        magnitude = _format_displacement(context, max(differences, default=0.0))
+        message = (
+            f"Comparaison créée dans l’Outliner : Before - captured target et After - current target. "
+            f"{moved}/{len(capture.vertex_indices)} sommets diffèrent; écart max. {magnitude}. "
+            "Ces surfaces temporaires sont ouvertes et réservées à l’inspection; elles ne sont pas imprimables. "
+            "Cliquez de nouveau sur la commande pour les effacer et revenir au maillage de travail."
+        )
+        _set_ui_status(context, message=message, level="INFO")
+        self.report({"INFO"}, "Comparaison avant/après créée; détail dans Clone Relief.")
+        return {"FINISHED"}
+
+
+class CLONERELIEF_OT_clear_comparison(bpy.types.Operator):
+    """Remove temporary before/after meshes and restore the work object."""
+
+    bl_idname = "clone_relief.clear_comparison"
+    bl_label = "Return to Work Mesh"
+    bl_description = "Remove temporary comparison meshes and restore the working mesh"
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        if not _remove_comparison(context):
+            self.report({"INFO"}, "Aucune comparaison temporaire à effacer.")
+            return {"CANCELLED"}
+        _set_ui_status(context, message="Comparaison effacée; maillage de travail restauré.", level="INFO")
+        return {"FINISHED"}
+
+
+class CLONERELIEF_OT_export_stl(bpy.types.Operator):
+    """Export only the active working mesh as a millimeter-scaled STL."""
+
+    bl_idname = "clone_relief.export_stl"
+    bl_label = "Export Working Mesh as STL"
+    bl_description = "Export only the active mesh to STL in millimeters"
+
+    filepath: StringProperty(subtype="FILE_PATH")
+    filter_glob: StringProperty(default="*.stl", options={"HIDDEN"})
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        obj = context.view_layer.objects.active
+        return obj is not None and obj.type == "MESH" and not obj.get("clone_relief_comparison", False)
+
+    def invoke(self, context: bpy.types.Context, _event: bpy.types.Event) -> set[str]:
+        obj = context.view_layer.objects.active
+        if obj is None:
+            return {"CANCELLED"}
+        if not self.filepath:
+            self.filepath = bpy.path.abspath(f"//{bpy.path.clean_name(obj.name)}.stl")
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        obj = context.view_layer.objects.active
+        if obj is None or obj.type != "MESH" or obj.get("clone_relief_comparison", False):
+            self.report({"ERROR"}, "Sélectionnez le maillage de travail, pas une surface de comparaison.")
+            return {"CANCELLED"}
+        previous_mode = obj.mode
+        previous_active = context.view_layer.objects.active
+        previous_selection = tuple(context.selected_objects)
+        try:
+            if obj.mode != "OBJECT":
+                bpy.ops.object.mode_set(mode="OBJECT")
+            bpy.ops.object.select_all(action="DESELECT")
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            result = bpy.ops.wm.stl_export(
+                filepath=self.filepath,
+                check_existing=True,
+                ascii_format=False,
+                export_selected_objects=True,
+                # STL has no unit metadata. Convert Blender units to mm using
+                # the scene's meters-per-unit scale, without relying on the
+                # scene display unit or applying the conversion twice.
+                global_scale=1000.0 * context.scene.unit_settings.scale_length,
+                use_scene_unit=False,
+                forward_axis="Y",
+                up_axis="Z",
+                apply_modifiers=True,
+            )
+            if "FINISHED" not in result:
+                raise RuntimeError("L’exporteur STL n’a pas terminé l’export.")
+        except (RuntimeError, OSError) as error:
+            _set_ui_status(context, message=f"Export STL échoué : {error}", level="ERROR")
+            self.report({"ERROR"}, "Export STL échoué. Consultez le panneau Clone Relief.")
+            return {"CANCELLED"}
+        finally:
+            if obj.mode != "OBJECT":
+                bpy.ops.object.mode_set(mode="OBJECT")
+            bpy.ops.object.select_all(action="DESELECT")
+            for selected_obj in previous_selection:
+                if selected_obj.name in bpy.data.objects:
+                    selected_obj.select_set(True)
+            if previous_active is not None and previous_active.name in bpy.data.objects:
+                context.view_layer.objects.active = previous_active
+            if previous_mode != "OBJECT" and obj.name in bpy.data.objects and obj.select_get():
+                context.view_layer.objects.active = obj
+                try:
+                    bpy.ops.object.mode_set(mode=previous_mode)
+                except RuntimeError:
+                    pass
+        message = f"Export STL terminé en millimètres : {self.filepath}"
+        _set_ui_status(context, message=message, level="INFO")
+        self.report({"INFO"}, "Export STL terminé. Vérifiez les dimensions dans votre trancheur.")
         return {"FINISHED"}
 
 
@@ -674,7 +1227,14 @@ _CLASSES: tuple[type[bpy.types.Operator], ...] = (
     CLONERELIEF_OT_copy_message,
     CLONERELIEF_OT_capture_source,
     CLONERELIEF_OT_capture_target,
+    CLONERELIEF_OT_restore_source_selection,
+    CLONERELIEF_OT_restore_target_selection,
     CLONERELIEF_OT_apply,
+    CLONERELIEF_OT_check_printability,
+    CLONERELIEF_OT_inspect_component,
+    CLONERELIEF_OT_compare_target,
+    CLONERELIEF_OT_clear_comparison,
+    CLONERELIEF_OT_export_stl,
     CLONERELIEF_OT_diagnose_resolution,
     CLONERELIEF_OT_subdivide_target,
 )

@@ -186,6 +186,51 @@ class CLONERELIEF_PG_settings(bpy.types.PropertyGroup):
     )
 
 
+def _draw_last_message(
+    layout: bpy.types.UILayout,
+    context: bpy.types.Context,
+    settings: CLONERELIEF_PG_settings,
+) -> None:
+    """Keep the latest operator result close to Preview and Apply controls."""
+    if not settings.last_message:
+        return
+    message_box = layout.box()
+    message_box.operator(
+        "clone_relief.copy_message",
+        text="Copier le message complet",
+        icon="COPYDOWN",
+    )
+    lines = list(settings.message_lines)
+    if lines:
+        message_box.template_list(
+            "CLONERELIEF_UL_message_lines",
+            "",
+            settings,
+            "message_lines",
+            settings,
+            "message_line_index",
+            rows=4,
+            maxrows=4,
+        )
+        return
+
+    icon = {"INFO": "CHECKMARK", "WARNING": "ERROR", "ERROR": "CANCEL"}.get(
+        settings.message_level,
+        "INFO",
+    )
+    region = context.region
+    width = max(42, min(80, (region.width - 48) // 8)) if region and region.width else 42
+    for index, line in enumerate(
+        wrap(
+            settings.last_message,
+            width=width,
+            break_long_words=False,
+            break_on_hyphens=False,
+        ) or [settings.last_message]
+    ):
+        message_box.label(text=line, icon=icon if index == 0 else "BLANK1")
+
+
 class CLONERELIEF_PT_sidebar(bpy.types.Panel):
     """Compact workflow controls in the 3D View N panel."""
 
@@ -213,11 +258,15 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         layout.label(text="1. Capture one connected source region")
         layout.label(text="Ombrage Solid et X-Ray désactivé : seule la surface visible est sélectionnée.")
         column = layout.column(align=True)
-        column.operator("clone_relief.capture_source", text="Capture Source")
+        row = column.row(align=True)
+        row.operator("clone_relief.capture_source", text="Capture Source")
+        row.operator("clone_relief.restore_source_selection", text="Reselect Source")
         column.label(text=f"Source: {settings.source_status}")
         layout.label(text="2. Select a separate target region on this same mesh")
         target_column = layout.column(align=True)
-        target_column.operator("clone_relief.capture_target", text="Capture Target")
+        row = target_column.row(align=True)
+        row.operator("clone_relief.capture_target", text="Capture Target")
+        row.operator("clone_relief.restore_target_selection", text="Reselect Target")
         target_column.label(text=f"Target: {settings.target_status}")
 
         layout.separator()
@@ -243,6 +292,41 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         apply_operator.falloff_fraction = settings.falloff_fraction
         apply_operator.max_displacement = settings.max_displacement
         apply_operator.direction = settings.relief_direction
+        _draw_last_message(layout, context, settings)
+
+        layout.separator()
+        layout.label(text="M5. Contrôle du maillage")
+        layout.operator(
+            "clone_relief.check_printability",
+            text="Contrôler la topologie pour l’impression",
+            icon="MESH_DATA",
+        )
+        layout.operator(
+            "clone_relief.inspect_component",
+            text="Localiser une composante…",
+            icon="VIEWZOOM",
+        )
+        comparison_collection = bpy.data.collections.get(
+            "Clone Relief Comparison (display only)"
+        )
+        if comparison_collection is None:
+            layout.operator(
+                "clone_relief.compare_target",
+                text="Comparer la cible avant/après",
+                icon="MOD_DIFFERENCE",
+            )
+        else:
+            layout.operator(
+                "clone_relief.clear_comparison",
+                text="Revenir au maillage de travail",
+                icon="LOOP_BACK",
+            )
+        layout.operator(
+            "clone_relief.export_stl",
+            text="Exporter le maillage actif en STL (mm)…",
+            icon="EXPORT",
+        )
+        layout.label(text="Le contrôle topologique ne détecte pas les auto-intersections ni les parois internes.")
 
         layout.separator()
         layout.label(text="Densification de la cible")
@@ -257,43 +341,6 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         )
         subdivision_operator.cuts = settings.subdivision_cuts
         subdivision_operator.max_added_faces = settings.max_added_faces
-
-        if settings.last_message:
-            message_box = layout.box()
-            message_box.operator(
-                "clone_relief.copy_message",
-                text="Copier le message complet",
-                icon="COPYDOWN",
-            )
-            lines = list(settings.message_lines)
-            if lines:
-                message_box.template_list(
-                    "CLONERELIEF_UL_message_lines",
-                    "",
-                    settings,
-                    "message_lines",
-                    settings,
-                    "message_line_index",
-                    rows=4,
-                    maxrows=4,
-                )
-            else:
-                icon = {"INFO": "CHECKMARK", "WARNING": "ERROR", "ERROR": "CANCEL"}.get(
-                    settings.message_level,
-                    "INFO",
-                )
-                region = context.region
-                width = max(42, min(80, (region.width - 48) // 8)) if region and region.width else 42
-                for index, line in enumerate(
-                    wrap(
-                        settings.last_message,
-                        width=width,
-                        break_long_words=False,
-                        break_on_hyphens=False,
-                    ) or [settings.last_message]
-                ):
-                    message_box.label(text=line, icon=icon if index == 0 else "BLANK1")
-
 
 _CLASSES: tuple[
     type[bpy.types.PropertyGroup] | type[bpy.types.UIList] | type[bpy.types.Panel], ...

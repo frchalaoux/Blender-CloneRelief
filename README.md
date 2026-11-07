@@ -3,11 +3,12 @@
 Prototype d’add-on Python pour copier le profil géométrique d’une zone saine
 d’un scan vers une zone cible du même maillage.
 
-**État :** M0–M4 sont réalisés : noyau mathématique, captures, Apply/Undo,
-diagnostic, densification locale et panneau N. Une mise à jour locale conserve
-la cible capturée entre les Apply et ajoute un réglage d’opacité de sélection;
-ces changements restent à valider dans Blender. La validation complète sur le
-scan Pika reste à faire. Le projet cible Blender **4.5.8 LTS** sur macOS Intel.
+**État :** M0–M4 sont réalisés et M5 est en cours. Le contrôle topologique et
+la localisation des composantes ont été utilisés sur le scan Pika; deux
+composantes internes ont été supprimées, puis l’audit a confirmé une composante
+sans défaut topologique détecté. La comparaison avant/après, l’export STL et la
+qualification complète pour l’impression restent à valider. Le projet cible
+Blender **4.5.8 LTS** sur macOS Intel.
 
 ## Documentation
 

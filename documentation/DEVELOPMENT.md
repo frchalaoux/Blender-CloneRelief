@@ -37,8 +37,12 @@ python -m pytest -q
   données neutres avec les coordonnées initiales et valide la topologie au
   moyen d’une empreinte du maillage.
 - `operators.py` expose capture, aperçu chiffré sans mutation, Apply, diagnostic
-  de résolution et subdivision locale confirmée en Edit Mode; `ui.py` relie ces
-  actions au panneau N. Chaque aperçu et Apply repart des coordonnées de la
+  de résolution et subdivision locale confirmée en Edit Mode. M5 ajoute un
+  rapport topologique en lecture seule, une comparaison temporaire de la cible
+  capturée avant/après, un export STL limité à l’objet actif, des commandes
+  pour rétablir les captures source/cible et un localisateur de composantes
+  déconnectées qui cadre la vue; `ui.py` relie ces actions au panneau N. Chaque
+  aperçu et Apply repart des coordonnées de la
   cible capturées; répéter Apply remplace donc le résultat précédent au lieu
   de l’empiler. Le panneau règle aussi l’opacité du remplissage de sélection
   orange; cette couleur de thème est restaurée à la désactivation. Le gain
@@ -94,6 +98,12 @@ longueur d’onde.
   scan réel.
 - Le noyau n’a pas encore été validé sur la courge scannée ni qualifié pour
   l’impression 3D.
+- Le contrôle topologique M5 et le localisateur de composantes ont été utilisés
+  sur le scan Pika; après suppression de deux composantes internes, l’audit a
+  confirmé un seul groupe sans défaut topologique détecté. La comparaison
+  avant/après et l’export STL, notamment ses dimensions dans un trancheur,
+  restent à valider. Le contrôle n’analyse ni les auto-intersections ni les
+  surfaces internes.
 
 ## Smoke test Blender
 

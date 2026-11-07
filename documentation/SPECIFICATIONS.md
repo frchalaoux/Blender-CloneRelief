@@ -1,13 +1,15 @@
 # Spécifications — Clone Relief
 
 - **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
-- **État :** spécification de référence; M0–M4 réalisés. La réapplication depuis
-  la cible capturée et l’opacité de sélection sont implémentées dans la mise à
-  jour locale; leur validation Blender reste à faire.
+- **État :** spécification de référence; M0–M4 réalisés. Le contrôle
+  topologique et la localisation de composantes M5 ont été utilisés sur le scan
+  Pika; deux composantes internes ont été supprimées, puis un audit a confirmé
+  une composante sans défaut topologique détecté. La comparaison avant/après,
+  l’export STL et la qualification complète pour l’impression restent à faire.
 - **Source de cadrage :** [`HANDOFF.md`](HANDOFF.md)
 - **Projet :** add-on Python pour Blender 4.5.8, macOS Intel
 
-Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique avaient réussi sur l’état précédent dans Blender 4.5.8; la mise à jour décrite ci-dessus n’a pas encore été validée. La méthode actuelle copie le profil complet relatif au plan moyen de la source; elle reste à valider visuellement sur une copie du scan Pika.
+Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique avaient réussi sur l’état M4 dans Blender 4.5.8; ils n’ont pas été relancés après M5. Le contrôle topologique M5 a été exécuté après suppression des composantes internes, mais le transfert reste à valider visuellement sur une copie du scan Pika.
 
 ## 1. Objectif
 
@@ -89,8 +91,10 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 - **F-17 — Aperçu et résultat :** fournir une estimation sans mutation du nombre de sommets à déplacer et du déplacement maximal. Après Apply, annoncer le nombre réellement déplacé, l’amplitude maximale, l’état Undo et signaler explicitement un résultat nul ou inférieur au seuil visuel documenté.
 - **F-18 — Gain contrôlé :** conserver l’intensité comme fraction entre 0 et 1 du profil copié et offrir séparément un gain multiplicatif borné à 100× pour rendre visible une source de faible amplitude. L’aperçu doit suggérer un gain lorsque le déplacement estimé est trop faible.
 - **F-19 — Sélection visible :** refuser la capture en Wireframe ou avec X-Ray actif et expliquer que ces modes peuvent inclure l’arrière du maillage.
-- **F-20 — Messages copiables :** afficher le détail des messages sur plusieurs lignes dans le panneau; permettre de sélectionner/copier les lignes et de copier le message complet en une action.
+- **F-20 — Messages copiables :** afficher le détail du dernier message juste sous les commandes Preview/Apply, sur plusieurs lignes dans le panneau; permettre de sélectionner/copier les lignes et de copier le message complet en une action.
 - **F-21 — Opacité de sélection :** proposer dans le panneau un réglage de l’alpha du remplissage orange des faces sélectionnées. Le réglage agit sur le thème de la vue 3D tant que l’add-on est actif et restaure les valeurs initiales du thème à sa désactivation.
+- **F-22 — Rétablir une capture :** permettre de resélectionner les faces source ou cible mémorisées après une désélection, sans recapture ni changement géométrique. N’activer l’action qu’en Edit Mode sur le même objet et tant que sa topologie correspond à la capture; invalider l’action si la topologie change. Les captures restent en mémoire pour la session uniquement.
+- **F-23 — Localiser une composante :** après l’audit, permettre de choisir une composante par son rang et son nombre de faces, sélectionner ses faces en Edit Mode et cadrer la vue dessus sans modifier la géométrie. Refuser une sélection basée sur une topologie qui a changé depuis le calcul des composantes.
 
 #### Décision de départ pour M3
 
@@ -152,6 +156,22 @@ Les critères suivants s’appliquent au calcul et à l’intégration. Les tol�
     résultante correspond toujours à la capture cible initiale; chaque opération
     Undo restaure l’état qui la précédait.
 15. L’opacité de sélection modifie le remplissage des faces sélectionnées et la désactivation de l’add-on restaure les valeurs d’alpha antérieures du thème.
+16. Le contrôle M5 rapporte les composantes reliées par arêtes, bords ouverts,
+    arêtes filaires et non-manifold, sommets non-manifold ou isolés et faces
+    dégénérées, sans modifier le maillage. Il indique explicitement que les
+    auto-intersections et surfaces internes ne sont pas recherchées.
+17. La comparaison M5 reconstruit les faces de la cible depuis sa capture avant
+    Apply et les coordonnées actuelles après Apply, les affiche côte à côte
+    temporairement, puis restaure le maillage de travail quand la comparaison
+    est effacée. Ces surfaces d’inspection sont ouvertes et ne sont pas des
+    pièces imprimables.
+18. L’export M5 ne prend que l’objet maillé actif, applique les modificateurs
+    et convertit les unités de Blender en millimètres selon `scale_length`.
+    Le fichier STL ne contient pas de métadonnées d’unité; les dimensions
+    doivent être vérifiées dans le trancheur.
+19. Après l’audit, chaque composante peut être choisie par son compte de faces;
+    la commande sélectionne ses faces et centre la vue dessus sans changer les
+    coordonnées ni la topologie.
 
 Le dernier critère est une validation empirique sur données réelles; il ne peut pas être remplacé par les tests synthétiques.
 
@@ -162,7 +182,7 @@ Le dernier critère est une validation empirique sur données réelles; il ne pe
 3. **M2 — Intégration Blender :** captures en Edit Mode, adaptateur, Apply + Undo et smoke test dans Blender 4.5.8.
 4. **M3 — Densification locale :** diagnostic de résolution, estimation de coût, subdivision locale encadrée.
 5. **M4 — UX :** panneau N, réglages, diagnostics et documentation d’utilisation sur macOS.
-6. **M5 — Impression 3D :** contrôles de continuité, manifoldness, comparaison avant/après et export de contrôle.
+6. **M5 — Impression 3D :** contrôle topologique indicatif, comparaison temporaire avant/après et export STL du maillage actif en millimètres; valider le flux sur un objet de test puis sur une copie du scan.
 
 ## 10. Décisions à valider pendant le prototypage
 

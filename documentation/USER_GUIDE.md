@@ -33,13 +33,15 @@ même objet maillé :
 1. Sur une copie de travail et en **Edit Mode**, choisir l’ombrage **Solid** et
    désactiver **X-Ray** afin que la sélection ne traverse pas l’objet. Sélectionner
    les faces d’une zone saine assez texturée, puis cliquer **Capture Source**.
-   Le panneau donne le nombre de faces et de sommets capturés.
+   Le panneau donne le nombre de faces et de sommets capturés. Si tu
+   désélectionnes la zone ensuite, **Reselect Source** la rétablit.
 2. Sélectionner les faces de la zone cible, puis cliquer **Capture Target**.
    Les faces doivent former un morceau continu, relié par des arêtes. Si la
    sélection touche aussi de petits morceaux disjoints, l’outil garde le groupe
    dominant seulement s’il contient au moins deux fois plus de faces que tous
    les autres réunis; il affiche alors le nombre de faces écartées. Sinon, il
    refuse la capture. La source et la cible doivent être sans face commune.
+   **Reselect Target** rétablit ensuite la cible capturée, y compris après Apply.
 3. Cliquer **Preview Effect**. L’aperçu ne modifie pas le maillage : il indique
    combien de sommets bougeraient et le déplacement maximal en millimètres.
    Vous pouvez modifier les réglages et refaire l’aperçu autant de fois que voulu;
@@ -65,6 +67,11 @@ cette capture devient la nouvelle géométrie de départ. Une modification de
 topologie invalide toujours les captures et impose de recapturer source et
 cible. Après une application, les modifications manuelles des sommets de la
 cible seront remplacées par le prochain résultat calculé depuis la capture.
+
+Les commandes **Reselect Source** et **Reselect Target** restaurent les faces
+sauvegardées en mémoire sans refaire la capture ni modifier la géométrie. Elles
+nécessitent Edit Mode sur le même objet et une topologie inchangée. Les captures
+disparaissent à la fermeture du fichier ou au rechargement de l’add-on.
 
 La barre latérale affiche les comptes de faces et sommets capturés ainsi que le
 dernier résultat ou message d’erreur. Un changement de topologie invalide les
@@ -97,7 +104,8 @@ près du bord; réduire sa largeur si l’on veut limiter cette zone de raccord.
 
 Les messages distinguent réussite, faible amplitude, absence de sommet déplacé
 et erreur de capture ou de topologie. Ils sont présentés ligne par ligne dans
-le panneau dans une zone défilante; chaque ligne peut être sélectionnée, et
+le panneau juste sous les commandes **Preview Effect** et **Apply Relief**, dans
+une zone défilante; chaque ligne peut être sélectionnée, et
 **Copier le message** copie le texte complet. Une réussite donne le compte des
 sommets modifiés et le déplacement maximal. Un résultat sous 0,05 mm est signalé comme très faible;
 ce seuil est un repère visuel, pas une garantie d’impression.
@@ -116,6 +124,40 @@ défaut). Vérifier l’estimation avant de confirmer. La subdivision conserve l
 positions des bords et peut subdiviser les faces voisines qui partagent les
 arêtes de la cible. Après l’opération, recapturer source et cible.
 
+## M5 : contrôle, comparaison et export STL
+
+Dans **M5. Contrôle du maillage**, **Contrôler la topologie pour l’impression**
+analyse l’objet maillé actif. Le rapport indique les composantes reliées par
+arêtes, les bords ouverts, arêtes filaires et non-manifold, sommets
+non-manifold ou isolés et faces dégénérées. Il ne modifie pas le maillage.
+Plusieurs composantes peuvent être voulues, et un résultat sans défaut détecté
+ne certifie pas qu’un solide soit imprimable : les auto-intersections et
+surfaces internes ne sont pas recherchées.
+
+Si plusieurs composantes sont signalées, **Localiser une composante…** ouvre
+leur liste avec le nombre de faces. Choisir une entrée sélectionne cette
+composante et centre la vue 3D dessus, sans modifier la géométrie. Le contrôle
+doit être relancé si la topologie change.
+
+Après **Apply Relief**, cliquer **Comparer la cible avant/après** en Edit Mode
+pour construire une paire temporaire de surfaces côte à côte depuis la cible
+capturée et le résultat courant. Le maillage de travail est masqué pendant la
+comparaison. Ces surfaces sont des copies ouvertes pour inspection visuelle,
+pas des pièces imprimables. Cliquer **Revenir au maillage de travail** avant de
+reprendre l’édition ou l’export. Cette comparaison porte uniquement sur les
+faces de la cible capturée.
+
+**Exporter le maillage actif en STL (mm)…** ouvre le sélecteur de fichier et
+exporte uniquement l’objet maillé actif, avec ses modificateurs évalués. La
+conversion en millimètres utilise l’échelle physique de la scène (`scale_length`)
+et les transformations de l’objet. Un STL n’enregistre pas l’unité : contrôler
+les dimensions importées dans le trancheur avant impression. Vérifier que
+l’objet de travail est actif et que la comparaison temporaire a été effacée.
+L’export est un contrôle de transfert; il ne répare ni ne certifie la
+fabricabilité du maillage. Blender expose le choix d’export des objets
+sélectionnés, l’échelle, l’unité de scène, les axes et l’application des
+modificateurs dans son [manuel STL 4.5](https://docs.blender.org/manual/en/4.5/files/import_export/stl.html).
+
 ## Validation sur une copie de la courge
 
 Ne pas commencer sur l’original. Faire une copie du fichier ou du maillage de
@@ -130,8 +172,10 @@ travail, puis :
    le plafond et confirmer sur la copie.
 5. Recapturer les deux régions, appliquer les réglages par défaut, puis
    examiner le relief sous lumière rasante.
-6. Comparer avant/après, vérifier les bords et la topologie, puis faire un
-   export de contrôle STL et l’ouvrir dans Bambu Studio.
+6. Lancer le contrôle topologique, comparer la cible avant/après, puis effacer
+   les surfaces de comparaison.
+7. Exporter le seul objet de travail en STL, ouvrir le fichier dans Bambu Studio
+   et vérifier les dimensions et avertissements.
 
 Le transfert crée un motif plausible; il ne récupère pas les détails réellement
 perdus du scan. Le prototype ne remplace pas une vérification des
