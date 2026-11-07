@@ -6,7 +6,7 @@ from math import pi, sin
 
 import pytest
 
-from clone_relief.geometry import MeshPatch, project_points, tangent_frame
+from clone_relief.geometry import MeshPatch, boundary_vertices, project_points, tangent_frame
 from clone_relief.relief import ReliefField, apply_relief, extract_relief, sample_relief
 
 
@@ -40,14 +40,14 @@ def field_for_mesh(mesh: MeshPatch, period: float = 2.5, amplitude: float = 0.2)
 
 def test_flat_source_has_zero_residual_and_leaves_flat_target_unchanged() -> None:
     mesh = grid_mesh()
-    source, _ = extract_relief(mesh, iterations=3)
+    source, _ = extract_relief(mesh)
     updated = apply_relief(source, mesh, intensity=0.6)
 
     assert max(abs(height) for height in source.heights) < 1e-12
     assert updated == mesh.vertices
 
 
-def test_sinusoidal_mesh_extraction_retains_high_frequency_residual() -> None:
+def test_extraction_preserves_complete_surface_profile_above_average_plane() -> None:
     steps = 64
     extent = 2.0
     period = 0.5
@@ -58,25 +58,25 @@ def test_sinusoidal_mesh_extraction_retains_high_frequency_residual() -> None:
         for _x in range(steps + 1)
     )
     mesh = grid_mesh(steps=steps, extent=extent, heights=heights)
-    field, _ = extract_relief(mesh, iterations=10)
-    samples = [
-        (field.heights[index], mesh.vertices[index][2])
-        for index, (x, y) in enumerate(field.coordinates)
-        if abs(x) < 1.5 and abs(y) < 1.5
-    ]
-    residuals, original = zip(*samples)
-    dot_product = sum(residual * height for residual, height in samples)
-    residual_norm = sum(value * value for value in residuals) ** 0.5
-    original_norm = sum(value * value for value in original) ** 0.5
+    field, frame = extract_relief(mesh)
+    expected = tuple(
+        vertex[2] - frame.origin[2]
+        for vertex in mesh.vertices
+    )
 
-    assert residual_norm > 1e-3
-    assert dot_product / (residual_norm * original_norm) > 0.99
+    assert max(abs(actual - reference) for actual, reference in zip(field.heights, expected)) < 1e-8
 
 
 def test_synthetic_sinusoid_is_interpolated_in_physical_coordinates() -> None:
     mesh = grid_mesh(steps=32, extent=2.0)
     source = field_for_mesh(mesh)
-    updated = apply_relief(source, mesh, intensity=1.0, falloff_fraction=0.25)
+    updated = apply_relief(
+        source,
+        mesh,
+        intensity=1.0,
+        falloff_fraction=0.25,
+        direction="BIDIRECTIONAL",
+    )
     frame = tangent_frame(mesh)
     coordinates = project_points(mesh.vertices, frame)
     interior_errors: list[float] = []
@@ -105,6 +105,58 @@ def test_intensity_is_linear_and_zero_intensity_does_not_move_vertices() -> None
         assert delta_sixty == pytest.approx(0.6 * delta_full, abs=1e-12)
 
 
+def test_gain_multiplies_extracted_relief_without_changing_intensity_semantics() -> None:
+    mesh = grid_mesh(steps=24)
+    source = field_for_mesh(mesh)
+    single = apply_relief(source, mesh, intensity=0.6, gain=1.0)
+    amplified = apply_relief(source, mesh, intensity=0.6, gain=4.0)
+
+    for original, one_x, four_x in zip(mesh.vertices, single, amplified):
+        assert four_x[2] - original[2] == pytest.approx(
+            4.0 * (one_x[2] - original[2]),
+            abs=1e-12,
+        )
+
+    with pytest.raises(ValueError, match="gain"):
+        apply_relief(source, mesh, gain=0.0)
+    with pytest.raises(ValueError, match="gain"):
+        apply_relief(source, mesh, gain=100.1)
+
+
+def test_default_unidirectional_mode_never_moves_target_below_its_surface() -> None:
+    mesh = grid_mesh(steps=24)
+    source = field_for_mesh(mesh)
+    updated = apply_relief(source, mesh, intensity=1.0)
+    displacements = tuple(new[2] - old[2] for old, new in zip(mesh.vertices, updated))
+
+    assert min(displacements) >= -1e-12
+    assert max(displacements) > 0.0
+    assert all(abs(displacements[index]) < 1e-12 for index in boundary_vertices(mesh.faces))
+
+
+def test_unidirectional_mode_preserves_source_profile_with_constant_upward_offset() -> None:
+    mesh = grid_mesh(steps=32)
+    source = field_for_mesh(mesh)
+    updated = apply_relief(source, mesh, intensity=1.0, gain=1.0, falloff_fraction=0.1)
+    floor = min(source.heights)
+    coordinates = project_points(mesh.vertices, tangent_frame(mesh))
+
+    for index, point in enumerate(mesh.vertices):
+        if abs(point[0]) < 0.5 and abs(point[1]) < 0.5:
+            expected = sample_relief(source, coordinates[index]) - floor
+            assert updated[index][2] - point[2] == pytest.approx(expected, abs=1e-10)
+
+
+def test_bidirectional_mode_preserves_positive_and_negative_source_relief() -> None:
+    mesh = grid_mesh(steps=24)
+    source = field_for_mesh(mesh)
+    updated = apply_relief(source, mesh, intensity=1.0, direction="BIDIRECTIONAL")
+    displacements = tuple(new[2] - old[2] for old, new in zip(mesh.vertices, updated))
+
+    assert min(displacements) < 0.0
+    assert max(displacements) > 0.0
+
+
 def test_scale_changes_motif_wavelength_and_outside_samples_are_not_extrapolated() -> None:
     mesh = grid_mesh(steps=32)
     source = field_for_mesh(mesh)
@@ -114,7 +166,13 @@ def test_scale_changes_motif_wavelength_and_outside_samples_are_not_extrapolated
     assert sample_relief(source, point) == pytest.approx(expected, abs=0.01)
     assert sample_relief(source, (1e6, 1e6)) is None
 
-    doubled = apply_relief(source, mesh, intensity=1.0, scale=2.0)
+    doubled = apply_relief(
+        source,
+        mesh,
+        intensity=1.0,
+        scale=2.0,
+        direction="BIDIRECTIONAL",
+    )
     frame = tangent_frame(mesh)
     coordinates = project_points(mesh.vertices, frame)
     center_row = sorted(
@@ -144,3 +202,5 @@ def test_apply_does_not_mutate_input_data_and_rejects_invalid_inputs() -> None:
         apply_relief(source, mesh, intensity=1.1)
     with pytest.raises(ValueError, match="scale"):
         apply_relief(source, mesh, scale=0.0)
+    with pytest.raises(ValueError, match="direction"):
+        apply_relief(source, mesh, direction="INVALID")

@@ -238,23 +238,11 @@ def smooth_reference(
 
 def extract_relief(
     mesh: MeshPatch,
-    *,
-    iterations: int = 10,
-    lambda_factor: float = 0.5,
-    mu_factor: float = -0.53,
 ) -> tuple[ReliefField, TangentFrame]:
-    """Extract signed normal residuals relative to a smoothed source reference."""
-    reference_vertices = smooth_reference(
-        mesh,
-        iterations=iterations,
-        lambda_factor=lambda_factor,
-        mu_factor=mu_factor,
-    )
-    reference = MeshPatch(reference_vertices, mesh.faces)
-    normals = vertex_normals(reference)
-    frame = tangent_frame(reference)
-    coordinates = project_points(reference_vertices, frame)
-    heights = tuple(dot(_sub(point, base), normal) for point, base, normal in zip(mesh.vertices, reference_vertices, normals))
+    """Extract the complete source topography relative to its average plane."""
+    frame = tangent_frame(mesh)
+    coordinates = project_points(mesh.vertices, frame)
+    heights = tuple(dot(_sub(point, frame.origin), frame.normal) for point in mesh.vertices)
     return ReliefField(coordinates, heights, mesh.faces), frame
 
 
@@ -268,28 +256,38 @@ def apply_relief(
     source: ReliefField,
     target: MeshPatch,
     *,
-    intensity: float = 0.60,
+    intensity: float = 1.0,
+    gain: float = 1.0,
     scale: float = 1.0,
     falloff_fraction: float = 0.25,
     max_displacement: float | None = None,
+    direction: str = "OUTWARD",
 ) -> tuple[Vec3, ...]:
     """Return updated target coordinates without mutating source or target.
 
     ``scale`` multiplies physical motif size: sampling at ``target / scale``
     makes a scale of 2 produce twice the wavelength. Samples outside the source
-    chart are left unchanged.
+    chart are left unchanged. ``OUTWARD`` shifts the complete source profile by
+    a constant so its minimum is zero, preserving its shape when intensity and
+    gain are 1. ``BIDIRECTIONAL`` preserves the profile around its average
+    plane, including negative displacement.
     """
     if not isfinite(intensity) or intensity < 0.0 or intensity > 1.0:
         raise ValueError("intensity must be in the interval [0, 1]")
+    if not isfinite(gain) or gain <= 0.0 or gain > 100.0:
+        raise ValueError("gain must be finite and in the interval (0, 100]")
     if not isfinite(scale) or scale <= 0.0:
         raise ValueError("scale must be finite and greater than zero")
     if max_displacement is not None and (not isfinite(max_displacement) or max_displacement < 0.0):
         raise ValueError("max_displacement must be finite and nonnegative")
+    if direction not in {"OUTWARD", "BIDIRECTIONAL"}:
+        raise ValueError("direction must be 'OUTWARD' or 'BIDIRECTIONAL'")
     frame = tangent_frame(target)
     target_coordinates = project_points(target.vertices, frame)
     normals = vertex_normals(target)
     weights = _target_falloff(target, falloff_fraction)
     sampler = ReliefSampler(source)
+    relief_floor = min(source.heights, default=0.0) if direction == "OUTWARD" else 0.0
     output: list[Vec3] = []
     for index, point in enumerate(target.vertices):
         coordinate = (target_coordinates[index][0] / scale, target_coordinates[index][1] / scale)
@@ -297,7 +295,10 @@ def apply_relief(
         if sampled is None:
             output.append(point)
             continue
-        displacement = sampled * intensity * weights[index]
+        relief_height = sampled - relief_floor
+        if direction == "OUTWARD":
+            relief_height = max(0.0, relief_height)
+        displacement = relief_height * intensity * gain * weights[index]
         if max_displacement is not None:
             displacement = max(-max_displacement, min(max_displacement, displacement))
         output.append(_add(point, _mul(normals[index], displacement)))

@@ -24,19 +24,25 @@ python -m pytest -q
 
 - `geometry.py` contient les structures `MeshPatch` et `TangentFrame`, les
   normales, le repère local, le graphe du patch et le masque de fondu.
-- `relief.py` extrait un résidu normal par rapport à une référence lissée
-  Taubin, construit un BVH 2D pour l’interpolation barycentrique, puis calcule
-  les coordonnées résultantes sans modifier les entrées.
+- `relief.py` extrait le profil complet de la source par rapport à son plan
+  moyen, construit un BVH 2D pour l’interpolation barycentrique, puis calcule
+  les coordonnées résultantes sans modifier les entrées. Le mode par défaut
+  translate le profil entier vers l’extérieur pour que son minimum arrive sur
+  la cible; les creux sont conservés et ne passent pas sous celle-ci. À
+  intensité 1, gain 1 et échelle 1, le profil intérieur est copié sans changer
+  son amplitude. Le mode bidirectionnel conserve le profil signé.
 - `density.py` compare les médianes d’arêtes source/cible et estime une borne
   haute du nombre de faces après subdivision locale, sans dépendance à Blender.
 - `blender_adapter.py` capture une sélection BMesh connectée, la compacte en
   données neutres et valide la topologie au moyen d’une empreinte du maillage.
-- `operators.py` expose capture, Apply, diagnostic de résolution et subdivision
-  locale confirmée en Edit Mode; `ui.py` relie ces actions au panneau N.
+- `operators.py` expose capture, aperçu chiffré sans mutation, Apply, diagnostic
+  de résolution et subdivision locale confirmée en Edit Mode; `ui.py` relie ces
+  actions au panneau N. Le gain d’amplitude est distinct de l’intensité 0–1.
 - `tests/` vérifie les cas géométriques synthétiques sans Blender.
 - `scripts/blender_smoke_test.py` vérifie le parcours Blender avec un objet
   synthétique sans toucher au scan.
-- L’aperçu non destructif reste à implémenter.
+- L’aperçu ne dessine pas de surimpression dans la vue 3D : il calcule le nombre
+  de sommets qui bougeraient et le déplacement maximal, sans modifier le mesh.
 
 ## Diagnostic et densification locale (M3)
 
@@ -73,6 +79,9 @@ longueur d’onde.
 - Aucun relief n’est extrapolé hors de la couverture 2D de la source.
 - Les détails transférés sont un motif plausible, pas les détails originaux
   absents du scan.
+- Les mesures préliminaires du scan Pika précèdent le passage à la copie du
+  profil complet; elles ne caractérisent pas encore le résultat de
+  l’algorithme actuel et devront être refaites lors de la validation sur copie.
 - Les zones très courbes ou distordues peuvent mal se projeter dans un repère
   tangent unique.
 - Une cible sous-échantillonnée ne peut pas représenter finement le motif; la

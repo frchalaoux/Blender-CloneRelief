@@ -24,11 +24,34 @@ class CapturedSelection:
     face_indices: tuple[int, ...]
     faces: tuple[Face, ...]
     vertices_world: tuple[Vec3, ...]
+    ignored_component_sizes: tuple[int, ...] = ()
 
     def as_patch(self) -> MeshPatch:
         """Return the captured world-space geometry as a pure mesh patch."""
         return MeshPatch(self.vertices_world, self.faces)
 
+
+def prepare_capture_view(context: bpy.types.Context) -> bool:
+    """Set the active workspace to Solid, X-Ray off, and face selection mode."""
+    changed = False
+    screens = (context.screen,) if context.screen is not None else tuple(bpy.data.screens)
+    for screen in screens:
+        for area in screen.areas:
+            if area.type != "VIEW_3D":
+                continue
+            shading = area.spaces.active.shading
+            if shading.type != "SOLID":
+                shading.type = "SOLID"
+                changed = True
+            if shading.show_xray:
+                shading.show_xray = False
+                changed = True
+            area.tag_redraw()
+    tool_settings = getattr(context, "tool_settings", None)
+    if tool_settings is not None and tuple(tool_settings.mesh_select_mode) != (False, False, True):
+        tool_settings.mesh_select_mode = (False, False, True)
+        changed = True
+    return changed
 
 def active_edit_mesh(context: bpy.types.Context) -> tuple[bpy.types.Object, bmesh.types.BMesh]:
     """Return the active edit-mode mesh and its live BMesh or raise clearly."""
@@ -60,28 +83,46 @@ def topology_signature(bm: bmesh.types.BMesh) -> str:
     return digest.hexdigest()
 
 
-def _assert_one_connected_component(faces: tuple[bmesh.types.BMFace, ...]) -> None:
-    """Reject face selections connected only by separate islands."""
+def _connected_components(
+    faces: tuple[bmesh.types.BMFace, ...],
+) -> list[tuple[bmesh.types.BMFace, ...]]:
+    """Return selected face components connected by shared edges."""
     remaining = set(faces)
-    components = 0
+    components: list[tuple[bmesh.types.BMFace, ...]] = []
     while remaining:
-        components += 1
-        if components > 1:
-            raise ValueError("Selection must be one edge-connected region")
         stack = [remaining.pop()]
+        component: list[bmesh.types.BMFace] = []
         while stack:
             face = stack.pop()
+            component.append(face)
             for edge in face.edges:
                 for neighbor in edge.link_faces:
                     if neighbor in remaining:
                         remaining.remove(neighbor)
                         stack.append(neighbor)
+        components.append(tuple(component))
+    return components
+
+
+def _assert_one_connected_component(faces: tuple[bmesh.types.BMFace, ...]) -> None:
+    """Reject face selections connected only by separate islands."""
+    component_sizes = [len(component) for component in _connected_components(faces)]
+    if len(component_sizes) > 1:
+        component_sizes.sort(reverse=True)
+        sizes = ", ".join(f"{size} faces" for size in component_sizes[:3])
+        if len(component_sizes) > 3:
+            sizes += ", …"
+        raise ValueError(
+            f"La sélection contient {len(component_sizes)} groupes de faces séparés "
+            f"({sizes}). Gardez un seul groupe relié par des arêtes."
+        )
 
 
 def capture_selection(
     context: bpy.types.Context,
     *,
     role: str,
+    allow_dominant_component: bool = False,
 ) -> CapturedSelection:
     """Capture selected faces into a compact world-space snapshot."""
     if role not in {"source", "target"}:
@@ -89,8 +130,25 @@ def capture_selection(
     obj, bm = active_edit_mesh(context)
     selected_faces = tuple(sorted((face for face in bm.faces if face.select), key=lambda face: face.index))
     if not selected_faces:
-        raise ValueError(f"No faces selected for {role}")
-    _assert_one_connected_component(selected_faces)
+        role_name = "source" if role == "source" else "cible"
+        raise ValueError(f"Aucune face sélectionnée pour la {role_name}.")
+    components = _connected_components(selected_faces)
+    ignored_component_sizes: tuple[int, ...] = ()
+    if len(components) > 1:
+        components.sort(key=len, reverse=True)
+        component_sizes = tuple(len(component) for component in components)
+        largest_size = component_sizes[0]
+        other_total = sum(component_sizes[1:])
+        if allow_dominant_component and largest_size >= 2 * other_total:
+            selected_faces = tuple(sorted(components[0], key=lambda face: face.index))
+            for component in components[1:]:
+                for face in component:
+                    face.select_set(False)
+            bm.select_flush_mode()
+            bmesh.update_edit_mesh(obj.data, loop_triangles=False, destructive=False)
+            ignored_component_sizes = component_sizes[1:]
+        else:
+            _assert_one_connected_component(selected_faces)
 
     vertex_indices = tuple(sorted({vertex.index for face in selected_faces for vertex in face.verts}))
     local_index = {mesh_index: local for local, mesh_index in enumerate(vertex_indices)}
@@ -111,6 +169,7 @@ def capture_selection(
         face_indices=tuple(face.index for face in selected_faces),
         faces=local_faces,
         vertices_world=vertices_world,  # type: ignore[arg-type]
+        ignored_component_sizes=ignored_component_sizes,
     )
 
 

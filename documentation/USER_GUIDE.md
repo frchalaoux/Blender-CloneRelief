@@ -19,36 +19,81 @@
 5. Dans la vue 3D, ouvrir la barre latérale avec **N**, puis choisir l’onglet
    **Clone Relief**.
 
+À l’activation de l’add-on et à l’ouverture d’un fichier Blender, la vue est
+préparée en **Solid**, avec **X-Ray désactivé** et la sélection de faces active.
+
 Blender 4.5 documente l’installation depuis un fichier ZIP, y compris pour les
 add-ons historiques, dans le [guide officiel des Add-ons](https://docs.blender.org/manual/en/4.5/editors/preferences/addons.html).
 
-## Capture et transfert
+## Protocole conseillé : capturer, prévisualiser, appliquer
 
 Toutes les captures et l’application du relief se font en **Edit Mode**, sur le
 même objet maillé :
 
-1. Sélectionner les faces d’une zone saine, puis cliquer **Capture Source**.
+1. Sur une copie de travail et en **Edit Mode**, choisir l’ombrage **Solid** et
+   désactiver **X-Ray** afin que la sélection ne traverse pas l’objet. Sélectionner
+   les faces d’une zone saine assez texturée, puis cliquer **Capture Source**.
+   Le panneau donne le nombre de faces et de sommets capturés.
 2. Sélectionner les faces de la zone cible, puis cliquer **Capture Target**.
-   Les régions source et cible doivent être connectées, distinctes et ne pas se
-   chevaucher.
-3. Régler les paramètres et cliquer **Apply Relief**. L’opération peut être
-   annulée avec Undo.
+   Les faces doivent former un morceau continu, relié par des arêtes. Si la
+   sélection touche aussi de petits morceaux disjoints, l’outil garde le groupe
+   dominant seulement s’il contient au moins deux fois plus de faces que tous
+   les autres réunis; il affiche alors le nombre de faces écartées. Sinon, il
+   refuse la capture. La source et la cible doivent être sans face commune.
+3. Cliquer **Preview Effect**. L’aperçu ne modifie pas le maillage : il indique
+   combien de sommets bougeraient et le déplacement maximal en millimètres.
+4. Si le panneau signale une cible trop grossière, lancer
+   **Diagnostiquer la résolution**, puis **Densifier la cible…** et vérifier le
+   nombre de faces estimé avant de confirmer. Densifier signifie ajouter des
+   sommets et des faces à la zone cible pour qu’elle puisse représenter des
+   détails plus fins. La subdivision invalide les captures :
+   recapturer source et cible, puis refaire l’aperçu.
+5. Si l’aperçu annonce un déplacement inférieur à **0,05 mm**, essayer le
+   **Relief Gain** suggéré ou capturer une source plus texturée. Refaire
+   l’aperçu jusqu’à obtenir une amplitude adaptée au résultat recherché.
+6. Cliquer **Apply Relief**. Le panneau indique si l’opération a réussi, le
+   nombre de sommets déplacés et leur déplacement maximal. Après application,
+   la cible doit être recapturée pour un nouveau transfert. L’opération est
+   annulable avec **Undo**.
+
+Si le résultat appliqué est trop faible et que vous voulez le remplacer,
+utiliser **Undo**, recapturer la cible, régler le gain, relancer l’aperçu puis
+appliquer. Cela évite d’empiler plusieurs transferts sur la même zone.
 
 La barre latérale affiche les comptes de faces et sommets capturés ainsi que le
 dernier résultat ou message d’erreur. Un changement de topologie invalide les
 captures.
 
+Une capture refusée avec plusieurs groupes indique le nombre de morceaux
+séparés par des arêtes. Garder uniquement le morceau souhaité et recapturer;
+une tentative refusée ne remplace pas une capture antérieure valide. Si un
+groupe dominant est retenu automatiquement, vérifier le nombre de faces
+écartées avant de poursuivre.
+
 ## Réglages
 
 | Réglage | Défaut | Effet |
 |---|---:|---|
-| Intensity | 0,60 | Applique 60 % de l’amplitude de relief extraite. |
+| Intensity | 1,00 | Copie le profil complet; une valeur plus faible réduit son amplitude. |
+| Relief Gain | 1,0× | Multiplie l’amplitude transférée; une valeur supérieure à 1 exagère le relief. Réglable jusqu’à 100×. |
 | Pattern Scale | 1,00 | Échelle physique du motif; 2,00 double sa longueur d’onde. |
 | Edge Falloff | 0,25 | Largeur relative du fondu depuis le bord cible. |
+| Mode de transfert | Unidirectionnel | Copie le profil source en le décalant vers l’extérieur juste assez pour ne pas passer sous la cible. Le mode bidirectionnel conserve son profil signé autour du plan moyen. |
 | Maximum Displacement | 0 | Aucun plafond; une valeur positive limite le déplacement en unités de scène. |
 
-La version actuelle ne propose pas d’aperçu non destructif. **Apply Relief**
-modifie les sommets de la cible et reste annulable par Undo.
+**Preview Effect** calcule le résultat sans changer les coordonnées du maillage.
+**Apply Relief** est la seule de ces étapes qui déplace les sommets.
+
+Pour copier le profil sans changer son amplitude, garder l’intensité à 1, le
+gain à 1 et l’échelle à 1. Le fondu atténue volontairement le déplacement
+près du bord; réduire sa largeur si l’on veut limiter cette zone de raccord.
+
+Les messages distinguent réussite, faible amplitude, absence de sommet déplacé
+et erreur de capture ou de topologie. Ils sont présentés ligne par ligne dans
+le panneau dans une zone défilante; chaque ligne peut être sélectionnée, et
+**Copier le message** copie le texte complet. Une réussite donne le compte des
+sommets modifiés et le déplacement maximal. Un résultat sous 0,05 mm est signalé comme très faible;
+ce seuil est un repère visuel, pas une garantie d’impression.
 
 ## Diagnostic et densification locale
 

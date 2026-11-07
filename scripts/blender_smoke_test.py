@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import sys
+from textwrap import wrap
 from pathlib import Path
 
 import bmesh
@@ -15,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import clone_relief  # noqa: E402
+from clone_relief import operators as relief_operators  # noqa: E402
 from clone_relief.blender_adapter import (
     active_edit_mesh,
     capture_selection,
@@ -100,19 +102,57 @@ def main() -> None:
     target_vertex_indices = {vertex for face_index in target_faces for vertex in obj.data.polygons[face_index].vertices}
     source_vertex_indices = {vertex for face_index in source_faces for vertex in obj.data.polygons[face_index].vertices}
 
+    view_area = next(
+        (area for area in bpy.context.screen.areas if area.type == "VIEW_3D"),
+        None,
+    ) if bpy.context.screen else None
+    if view_area is not None:
+        view_area.spaces.active.shading.type = "WIREFRAME"
+        view_area.spaces.active.shading.show_xray = True
+    bpy.context.tool_settings.mesh_select_mode = (True, False, False)
     clone_relief.register()
+    if view_area is not None and (
+        view_area.spaces.active.shading.type != "SOLID"
+        or view_area.spaces.active.shading.show_xray
+    ):
+        raise AssertionError("Addon registration did not prepare a visible-surface view")
+    if tuple(bpy.context.tool_settings.mesh_select_mode) != (False, False, True):
+        raise AssertionError("Addon registration did not enable face selection mode")
     settings = bpy.context.scene.clone_relief_settings
-    if not math.isclose(settings.intensity, 0.60, abs_tol=1e-6) or not math.isclose(settings.scale, 1.0):
+    if not math.isclose(settings.intensity, 1.0, abs_tol=1e-6) or not math.isclose(settings.scale, 1.0):
         raise AssertionError("Sidebar transfer settings have unexpected defaults")
     if not math.isclose(settings.falloff_fraction, 0.25):
         raise AssertionError("Sidebar falloff default is incorrect")
+    if settings.relief_direction != "OUTWARD":
+        raise AssertionError("Unidirectional outward transfer is not the default")
     if not hasattr(bpy.types, "CLONERELIEF_PT_sidebar"):
         raise AssertionError("Clone Relief sidebar panel was not registered")
     bpy.ops.object.mode_set(mode="EDIT")
     _selected_faces(source_faces)
     assert "FINISHED" in bpy.ops.clone_relief.capture_source()
-    if not settings.source_status.startswith("256 faces / 289 vertices"):
+    if not settings.source_status.startswith("256 faces / 289 sommets"):
         raise AssertionError("Source capture did not update sidebar status")
+    _selected_faces((*source_faces, target_faces[0]))
+    assert "FINISHED" in bpy.ops.clone_relief.capture_source()
+    if relief_operators._SOURCE_CAPTURE.ignored_component_sizes != (1,):
+        raise AssertionError("A small disconnected selection group was not reported")
+    if len(relief_operators._SOURCE_CAPTURE.face_indices) != len(source_faces):
+        raise AssertionError("Dominant source group was not captured by itself")
+    valid_source_capture = relief_operators._SOURCE_CAPTURE
+    _selected_faces((source_faces[0], source_faces[-1]))
+    try:
+        rejected_source = bpy.ops.clone_relief.capture_source()
+    except RuntimeError as error:
+        if "Capture Source refusée" not in str(error):
+            raise
+    else:
+        if "CANCELLED" not in rejected_source:
+            raise AssertionError("Disconnected source selection was accepted")
+    if relief_operators._SOURCE_CAPTURE is not valid_source_capture:
+        raise AssertionError("Failed source recapture discarded the valid capture")
+    if "2 groupes" not in settings.last_message:
+        raise AssertionError("Disconnected source error did not explain the component count")
+    _selected_faces(source_faces)
 
     stale_capture = capture_selection(bpy.context, role="source")
     bm = bmesh.from_edit_mesh(obj.data)
@@ -131,13 +171,45 @@ def main() -> None:
     assert "FINISHED" in bpy.ops.clone_relief.capture_source()
     _selected_faces(target_faces)
     assert "FINISHED" in bpy.ops.clone_relief.capture_target()
-    if not settings.target_status.startswith("128 faces / 81 vertices"):
+    if not settings.target_status.startswith("128 faces / 81 sommets"):
         raise AssertionError("Target capture did not update sidebar status")
+    _selected_faces((*target_faces, source_faces[0]))
+    assert "FINISHED" in bpy.ops.clone_relief.capture_target()
+    if relief_operators._TARGET_CAPTURE.ignored_component_sizes != (1,):
+        raise AssertionError("A small disconnected target group was not reported")
+    if len(relief_operators._TARGET_CAPTURE.face_indices) != len(target_faces):
+        raise AssertionError("Dominant target group was not captured by itself")
+    valid_target_capture = relief_operators._TARGET_CAPTURE
+    _selected_faces((target_faces[0], target_faces[-1]))
+    try:
+        rejected_target = bpy.ops.clone_relief.capture_target()
+    except RuntimeError as error:
+        if "Capture Target refusée" not in str(error):
+            raise
+    else:
+        if "CANCELLED" not in rejected_target:
+            raise AssertionError("Disconnected target selection was accepted")
+    if relief_operators._TARGET_CAPTURE is not valid_target_capture:
+        raise AssertionError("Failed target recapture discarded the valid capture")
+    _selected_faces(target_faces)
     before = _positions(obj)
+    assert "FINISHED" in bpy.ops.clone_relief.preview("EXEC_DEFAULT", True)
+    if _positions(obj) != before:
+        raise AssertionError("Preview changed mesh coordinates")
+    if not settings.last_message.startswith("Aperçu"):
+        raise AssertionError("Preview did not report its estimated effect")
+    expected_lines = wrap(settings.last_message, width=42, break_long_words=False, break_on_hyphens=False)
+    if [line.text for line in settings.message_lines] != expected_lines:
+        raise AssertionError("Detailed message lines were not populated for selection and copy")
+    assert "FINISHED" in bpy.ops.clone_relief.copy_message()
+    if not bpy.app.background and bpy.context.window_manager.clipboard != settings.last_message:
+        raise AssertionError("Copy Message did not place the full message on the clipboard")
     bpy.ops.ed.undo_push(message="Before Clone Relief Apply")
     assert "FINISHED" in bpy.ops.clone_relief.apply("EXEC_DEFAULT", True)
-    if settings.target_status != "Not captured":
-        raise AssertionError("Apply did not clear the target capture status")
+    if not settings.target_status.startswith("À recapturer"):
+        raise AssertionError("Apply did not explain that target must be recaptured")
+    if "sommets" not in settings.last_message or "déplacement max." not in settings.last_message:
+        raise AssertionError("Apply did not report moved vertices and displacement")
     after_apply = _positions(obj)
 
     moved_target = [
@@ -147,6 +219,8 @@ def main() -> None:
     ]
     if not moved_target:
         raise AssertionError("Apply did not displace any target vertices")
+    if any(after_apply[index][2] < before[index][2] - 1e-12 for index in target_vertex_indices):
+        raise AssertionError("Default unidirectional transfer moved target vertices inward")
     if any(after_apply[index] != before[index] for index in source_vertex_indices):
         raise AssertionError("Apply changed source vertices")
     if any(
@@ -198,8 +272,10 @@ def main() -> None:
             max_added_faces=1,
         )
     except RuntimeError as error:
-        if "Conservative estimate adds" not in str(error):
+        if "Subdivision refusée" not in str(error):
             raise
+        if "Conservative estimate adds 480 faces" not in settings.last_message:
+            raise AssertionError("Sidebar did not retain the detailed subdivision error")
     else:
         if "CANCELLED" not in rejected:
             raise AssertionError("Subdivision ignored the added-face safety limit")

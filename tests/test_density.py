@@ -44,6 +44,14 @@ def test_target_near_source_spacing_is_not_flagged() -> None:
     assert report.recommended_cuts == 0
 
 
+def test_target_at_scan_resolution_ratio_recommends_one_local_cut() -> None:
+    report = analyze_resolution(_grid_patch(0.1), _grid_patch(0.183))
+
+    assert report.needs_subdivision
+    assert report.p90_ratio == pytest.approx(1.83)
+    assert report.recommended_cuts == 1
+
+
 def test_face_estimate_includes_existing_faces_and_subdivision_growth() -> None:
     # Two affected triangles each split into four faces after one cut.
     assert estimate_face_count_upper_bound(10, (3, 3), cuts=1) == 16

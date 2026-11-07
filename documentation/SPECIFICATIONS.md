@@ -1,15 +1,15 @@
 # Spécifications — Clone Relief
 
-- **Version :** 0.1 — spécification initiale
+- **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
 - **État :** spécification de référence; M0–M4 réalisés, validation sur scan à venir
 - **Source de cadrage :** [`HANDOFF.md`](HANDOFF.md)
 - **Projet :** add-on Python pour Blender 4.5.8, macOS Intel
 
-Ce document transforme le handoff en exigences produit et critères de validation. Les 17 tests pytest et le smoke test synthétique M2–M4 passent dans Blender 4.5.8. La validation sur le scan Pika n’est pas réalisée.
+Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique M2–M4 passent dans Blender 4.5.8. La méthode actuelle copie le profil complet relatif au plan moyen de la source; elle reste à valider visuellement sur une copie du scan Pika.
 
 ## 1. Objectif
 
-Clone Relief doit transférer le microrelief géométrique d’une zone saine d’un scan 3D vers une zone cible du même maillage. Le transfert doit suivre les normales locales de la cible, préserver autant que possible sa forme générale et fondre progressivement le déplacement aux limites de la zone.
+Clone Relief doit copier le profil de surface d’une zone saine d’un scan 3D vers une zone cible du même maillage. En mode unidirectionnel, il translate le profil entier vers l’extérieur sans écrêter ses creux; un fondu facultatif atténue le déplacement près des limites.
 
 Le résultat doit être porté par la géométrie exportée (STL/3MF), et non par une texture ou un effet de rendu. L’outil modifie les sommets de la cible existante : il ne crée pas de patch superposé et ne remplace pas les faces par un morceau de surface soudé.
 
@@ -34,17 +34,19 @@ Le résultat doit être porté par la géométrie exportée (STL/3MF), et non pa
 1. L’utilisateur sélectionne l’objet maillé à traiter.
 2. En Edit Mode, il sélectionne des faces saines et lance **Capture Source**.
 3. Il sélectionne les faces cibles sur le même objet et lance **Capture Target**.
-4. Il règle l’intensité, l’échelle du motif et le fondu de bord.
-5. Il applique le transfert en une opération annulable et peut restaurer l’état précédent avec Undo.
-6. Il inspecte le résultat et peut exporter le maillage. Une commande optionnelle peut densifier localement une cible trop peu détaillée.
+4. Il prévisualise le nombre de sommets concernés et l’amplitude maximale sans modifier le maillage.
+5. Il règle l’intensité, le gain d’amplitude, l’échelle du motif et le fondu de bord.
+6. Il applique le transfert en une opération annulable et peut restaurer l’état précédent avec Undo.
+7. Il inspecte le résultat et peut exporter le maillage. Une commande optionnelle peut densifier localement une cible trop peu détaillée.
 
-La première version peut exposer les opérations sans panneau complet. L’interface visée à terme est un panneau **Clone Relief** dans la barre latérale N de la vue 3D.
+L’interface actuelle est le panneau **Clone Relief** dans la barre latérale N de la vue 3D.
 
 ## 4. Réglages
 
 | Réglage | Valeur initiale | Définition |
 |---|---:|---|
-| Intensité | 0,60 (60 %) | Multiplicateur de l’amplitude de relief extraite. 0,60 signifie 0,6 fois cette amplitude, pas 60 % du diamètre de l’objet. |
+| Intensité | 1,00 (100 %) | Copie intégrale du profil source. Une valeur plus faible réduit l’écart au profil copié. |
+| Gain | 1,00× | Multiplicateur séparé de l’intensité; les valeurs supérieures à 1 exagèrent le profil. |
 | Échelle du motif | 1,00 (100 %) | Échelle physique du motif transféré. La convention doit être documentée et vérifiée par test. |
 | Largeur du fondu | 0,25 (25 %) | Fraction de la largeur caractéristique de la sélection cible utilisée pour le raccord. |
 | Amplitude maximale | facultative | Plafond en unités de scène pour limiter les déplacements excessifs. |
@@ -55,18 +57,18 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 
 ### Capture et état des sélections
 
-- **F-01 — Capture source :** mémoriser les faces sélectionnées, leur géométrie utile, leur connectivité et les données nécessaires au calcul du relief. La capture doit survivre aux changements de sélection.
+- **F-01 — Capture source :** mémoriser un morceau de faces reliées par des arêtes communes, ainsi que leur géométrie utile et les données nécessaires au calcul du relief. Si la sélection contient plusieurs morceaux et que le plus grand compte au moins deux fois plus de faces que les autres réunis, capturer le plus grand, écarter les autres de la sélection visible et signaler leur compte. Sinon, refuser la capture. La capture doit survivre aux changements de sélection.
 - **F-02 — Validité de capture :** détecter ou invalider une capture si la topologie de l’objet change après capture. Le comportement doit être explicite pour l’utilisateur.
 - **F-03 — Capture cible :** mémoriser une sélection cible distincte sur le même objet pour la V1.
-- **F-04 — Sélections incompatibles :** refuser ou traiter explicitement une source vide, une cible vide, des sélections disjointes ou un chevauchement source/cible.
+- **F-04 — Sélections incompatibles :** refuser ou traiter explicitement une source vide, une cible vide, des groupes disjoints sans groupe dominant et un chevauchement source/cible.
 
 ### Extraction et transfert du relief
 
-- **F-05 — Séparation forme/détail :** estimer une surface de référence lissée sur la source et extraire le résidu signé suivant les normales de référence. Ne pas transférer la pente ni la silhouette générale de la source.
+- **F-05 — Profil de surface :** extraire la surface supérieure complète par rapport au plan moyen de la source, afin que le profil copié conserve ses bosses et ses creux. À intensité 100 %, gain 1× et échelle 1×, le profil intérieur de la cible doit correspondre au profil source, à une translation constante près en mode unidirectionnel.
 - **F-06 — Repères locaux :** construire une paramétrisation 2D locale pour la source et la cible, puis échantillonner le relief source dans le repère cible. Signaler les limites pour les fortes courbures, distorsions, plis et topologies non assimilables à un disque.
 - **F-07 — Échelle physique :** interpréter l’échelle selon les unités physiques de Blender, et non selon les pixels de l’écran.
 - **F-08 — Interpolation :** interpoler les hauteurs de façon stable, par exemple par coordonnées barycentriques. Les points hors de la source ne doivent pas produire d’extrapolation incontrôlée.
-- **F-09 — Déplacement :** déplacer les sommets cibles le long de leurs normales locales selon l’intensité, le relief échantillonné et le masque de fondu. Les sommets hors cible restent inchangés, sauf effet de bord explicitement défini.
+- **F-09 — Déplacement :** par défaut, transférer le profil en mode unidirectionnel : soustraire son minimum pour que le profil copié soit non négatif, puis déplacer les sommets cibles uniquement dans le sens positif de leurs normales locales. Cette translation ne doit ni écrêter les creux ni changer la forme du profil. Le mode bidirectionnel conserve le profil signé autour du plan moyen. Appliquer intensité, gain et fondu; les sommets hors cible restent inchangés.
 - **F-10 — Fondu :** le poids est nul sur le bord de la sélection et augmente sans rupture vers l’intérieur, par exemple avec `smoothstep`. Préférer une distance sur le graphe du maillage à une distance euclidienne lorsque la forme comporte des plis ou replis.
 
 ### Densité et sécurité
@@ -77,6 +79,10 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 - **F-14 — Topologie :** le transfert ne doit pas créer de patch superposé, de double paroi ni de surface interne. Il ne doit pas ouvrir de bord qui était fermé avant l’opération.
 - **F-15 — Diagnostics :** présenter des informations ou alertes utiles : nombres de faces source/cible, taille ou densité des arêtes, amplitude des déplacements, nombre de sommets déplacés, normales incohérentes, sélections disjointes et faces dégénérées.
 - **F-16 — Impression 3D :** proposer un contrôle de manifoldness après application, sans prétendre réparer les défauts préexistants du scan.
+- **F-17 — Aperçu et résultat :** fournir une estimation sans mutation du nombre de sommets à déplacer et du déplacement maximal. Après Apply, annoncer le nombre réellement déplacé, l’amplitude maximale, l’état Undo et signaler explicitement un résultat nul ou inférieur au seuil visuel documenté.
+- **F-18 — Gain contrôlé :** conserver l’intensité comme fraction entre 0 et 1 du profil copié et offrir séparément un gain multiplicatif borné à 100× pour rendre visible une source de faible amplitude. L’aperçu doit suggérer un gain lorsque le déplacement estimé est trop faible.
+- **F-19 — Sélection visible :** refuser la capture en Wireframe ou avec X-Ray actif et expliquer que ces modes peuvent inclure l’arrière du maillage.
+- **F-20 — Messages copiables :** afficher le détail des messages sur plusieurs lignes dans le panneau; permettre de sélectionner/copier les lignes et de copier le message complet en une action.
 
 #### Décision de départ pour M3
 
@@ -123,22 +129,24 @@ Les critères suivants s’appliquent au calcul et à l’intégration. Les tol�
 
 1. Une source plane sans relief produit une hauteur proche de zéro et ne déplace pas la cible.
 2. Un relief sinusoïdal synthétique conserve une fréquence et une amplitude dans les tolérances définies.
-3. Une intensité de 0 % ne déplace aucun sommet; 60 % produit 0,6 fois le déplacement de 100 %, hors plafonnement.
-4. L’échelle à 100 % conserve la taille caractéristique du motif; les autres valeurs suivent la convention documentée.
-5. Le poids de fondu est nul au bord et progresse vers l’intérieur sans discontinuité manifeste.
-6. Sans densification, tous les sommets hors cible restent bit-à-bit inchangés.
-7. Les cas vides, une seule face, sélections disjointes, triangles dégénérés, normales incohérentes, source sans variance et cible sous-échantillonnée sont gérés explicitement.
-8. Undo restaure les coordonnées d’origine; l’opération n’altère pas les entrées de calcul.
-9. Dans Blender 4.5.8, les captures et Apply fonctionnent sur un maillage synthétique; Undo restaure le résultat et la console ne signale pas d’exception.
-10. Un export STL de contrôle sur un objet fermé ne contient pas de défaut de manifoldness introduit par l’outil.
-11. Sur une copie du scan Pika, le motif est visible en lumière rasante, le raccord est acceptable et aucune paroi supplémentaire ni ouverture n’est créée.
+3. Le mode unidirectionnel par défaut ne déplace aucun sommet cible dans le sens négatif de sa normale; le mode bidirectionnel conserve des déplacements positifs et négatifs.
+4. En mode unidirectionnel, intensité 100 %, gain 1× et échelle 1×, le profil cible intérieur correspond au profil source à une translation constante près; aucun creux n’est écrêté.
+5. Une intensité de 0 % ne déplace aucun sommet; 60 % produit 0,6 fois le déplacement de 100 %, hors plafonnement.
+6. L’échelle à 100 % conserve la taille caractéristique du motif; les autres valeurs suivent la convention documentée.
+7. Le poids de fondu est nul au bord et progresse vers l’intérieur sans discontinuité manifeste.
+8. Sans densification, tous les sommets hors cible restent bit-à-bit inchangés.
+9. Les cas vides, une seule face, sélections disjointes, triangles dégénérés, normales incohérentes, source sans variance et cible sous-échantillonnée sont gérés explicitement.
+10. Undo restaure les coordonnées d’origine; l’opération n’altère pas les entrées de calcul.
+11. Dans Blender 4.5.8, les captures et Apply fonctionnent sur un maillage synthétique; Undo restaure le résultat et la console ne signale pas d’exception.
+12. Un export STL de contrôle sur un objet fermé ne contient pas de défaut de manifoldness introduit par l’outil.
+13. Sur une copie du scan Pika, le profil source est reconnaissable sur la cible, le raccord est acceptable et aucune paroi supplémentaire ni ouverture n’est créée.
 
 Le dernier critère est une validation empirique sur données réelles; il ne peut pas être remplacé par les tests synthétiques.
 
 ## 9. Plan de réalisation
 
 1. **M0 — Mise en place :** structure du projet, configuration Python, documentation de l’environnement Blender/macOS.
-2. **M1 — Prototype mathématique :** extraction du résidu, interpolation, fondu et jeux synthétiques; valider avant l’interface et avant les scans volumineux.
+2. **M1 — Prototype mathématique :** extraction du profil, interpolation, fondu et jeux synthétiques; valider avant l’interface et avant les scans volumineux.
 3. **M2 — Intégration Blender :** captures en Edit Mode, adaptateur, Apply + Undo et smoke test dans Blender 4.5.8.
 4. **M3 — Densification locale :** diagnostic de résolution, estimation de coût, subdivision locale encadrée.
 5. **M4 — UX :** panneau N, réglages, diagnostics et documentation d’utilisation sur macOS.
@@ -146,7 +154,7 @@ Le dernier critère est une validation empirique sur données réelles; il ne pe
 
 ## 10. Décisions à valider pendant le prototypage
 
-- Choix du filtre ou de la surface de référence lissée, et traitement de ses bords.
+- Méthode d’estimation du plan moyen, correspondance des profils et traitement des bords.
 - Méthode de projection locale 2D et comportement sur les surfaces fortement courbes.
 - Convention exacte de l’échelle du motif et méthode d’orientation initiale.
 - Comportement lorsque des points cibles sortent du domaine source.

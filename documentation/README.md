@@ -9,3 +9,4 @@ racine reste le point d’entrée du projet et donne les commandes rapides.
 - [SPECIFICATIONS.md](SPECIFICATIONS.md) — objectif produit, exigences et critères d’acceptation.
 - [DEVELOPMENT.md](DEVELOPMENT.md) — environnement, architecture mathématique M1, commandes et limites.
 - [USER_GUIDE.md](USER_GUIDE.md) — installation macOS, panneau, parcours utilisateur et validation sur copie.
+- [Exemple avant/après](examples/README.md) — comparaison visuelle synthétique et scène Blender reproductible.
