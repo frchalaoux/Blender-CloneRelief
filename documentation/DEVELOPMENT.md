@@ -34,10 +34,15 @@ python -m pytest -q
 - `density.py` compare les médianes d’arêtes source/cible et estime une borne
   haute du nombre de faces après subdivision locale, sans dépendance à Blender.
 - `blender_adapter.py` capture une sélection BMesh connectée, la compacte en
-  données neutres et valide la topologie au moyen d’une empreinte du maillage.
+  données neutres avec les coordonnées initiales et valide la topologie au
+  moyen d’une empreinte du maillage.
 - `operators.py` expose capture, aperçu chiffré sans mutation, Apply, diagnostic
   de résolution et subdivision locale confirmée en Edit Mode; `ui.py` relie ces
-  actions au panneau N. Le gain d’amplitude est distinct de l’intensité 0–1.
+  actions au panneau N. Chaque aperçu et Apply repart des coordonnées de la
+  cible capturées; répéter Apply remplace donc le résultat précédent au lieu
+  de l’empiler. Le panneau règle aussi l’opacité du remplissage de sélection
+  orange; cette couleur de thème est restaurée à la désactivation. Le gain
+  d’amplitude est distinct de l’intensité 0–1.
 - `tests/` vérifie les cas géométriques synthétiques sans Blender.
 - `scripts/blender_smoke_test.py` vérifie le parcours Blender avec un objet
   synthétique sans toucher au scan.
@@ -107,3 +112,9 @@ captures résident en mémoire pour la session Blender; elles sont invalidées
 quand l’empreinte de topologie change. Cette
 empreinte parcourt tout le maillage à chaque capture/apply, ce qui peut coûter
 du temps sur des scans de plusieurs millions de faces.
+
+La capture cible conserve sa géométrie de départ tant que l’utilisateur ne
+recapture pas une autre zone ou ne change pas la topologie. Le smoke test vérifie
+actuellement que le panneau conserve le statut de cette capture après Apply;
+les scénarios de réapplication avec plusieurs réglages restent à valider dans
+Blender.

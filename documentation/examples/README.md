@@ -20,6 +20,7 @@ résultat sur un scan réel.
 La scène s’ouvre sur un maillage de test actif en **Edit Mode**, en sélection de
 faces. Ses réglages sont déjà **Intensity 1,0**, **Relief Gain 1×**,
 **Pattern Scale 1,0**, **Edge Falloff 0,10** et le mode unidirectionnel.
+L’opacité de sélection est réglée à **8 %**.
 La source striée est à gauche
 (ambre) et la cible plane à droite (vert).
 Ces deux zones sont deux îlots du même objet.
@@ -30,6 +31,20 @@ Ces deux zones sont deux îlots du même objet.
    appuie sur **L**. Clique **Capture Target**.
 3. Règle **Intensity** à `1,0`, **Relief Gain** à `1` et **Edge Falloff** à
    `0,10`, puis clique **Preview Effect** et **Apply Relief**.
+
+Après **Capture Target**, tu peux changer les réglages, refaire l’aperçu et
+appliquer plusieurs fois. Chaque application repart de la géométrie initiale
+capturée et remplace le résultat précédent. Capture une nouvelle cible
+uniquement pour changer de zone ou après une modification de topologie.
+Le réglage **Opacité sélection** dans le panneau réduit le remplissage orange
+des faces sélectionnées dans la vue 3D.
+
+**Apply Relief** modifie la cible du maillage `TEST` sur place. L’objet
+`After - transferred relief` est une pièce de présentation générée par le
+script, et ne suit pas les applications faites ensuite dans `TEST`. Pour
+comparer les pièces de présentation dans la vue 3D, masquer `TEST` et afficher
+`Before - smooth target` et `After - transferred relief`; pour manipuler le
+maillage de test, faire l’inverse.
 
 Le mode unidirectionnel copie le profil source sans écrêter ses creux, puis le
 décale pour que les sommets de la cible ne passent pas sous sa surface. À

@@ -1,11 +1,13 @@
 # Spécifications — Clone Relief
 
 - **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
-- **État :** spécification de référence; M0–M4 réalisés, validation sur scan à venir
+- **État :** spécification de référence; M0–M4 réalisés. La réapplication depuis
+  la cible capturée et l’opacité de sélection sont implémentées dans la mise à
+  jour locale; leur validation Blender reste à faire.
 - **Source de cadrage :** [`HANDOFF.md`](HANDOFF.md)
 - **Projet :** add-on Python pour Blender 4.5.8, macOS Intel
 
-Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique M2–M4 passent dans Blender 4.5.8. La méthode actuelle copie le profil complet relatif au plan moyen de la source; elle reste à valider visuellement sur une copie du scan Pika.
+Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique avaient réussi sur l’état précédent dans Blender 4.5.8; la mise à jour décrite ci-dessus n’a pas encore été validée. La méthode actuelle copie le profil complet relatif au plan moyen de la source; elle reste à valider visuellement sur une copie du scan Pika.
 
 ## 1. Objectif
 
@@ -35,7 +37,7 @@ Le résultat doit être porté par la géométrie exportée (STL/3MF), et non pa
 2. En Edit Mode, il sélectionne des faces saines et lance **Capture Source**.
 3. Il sélectionne les faces cibles sur le même objet et lance **Capture Target**.
 4. Il prévisualise le nombre de sommets concernés et l’amplitude maximale sans modifier le maillage.
-5. Il règle l’intensité, le gain d’amplitude, l’échelle du motif et le fondu de bord.
+5. Il règle l’intensité, le gain d’amplitude, l’échelle du motif, le fondu de bord et l’opacité du remplissage de sélection.
 6. Il applique le transfert en une opération annulable et peut restaurer l’état précédent avec Undo.
 7. Il inspecte le résultat et peut exporter le maillage. Une commande optionnelle peut densifier localement une cible trop peu détaillée.
 
@@ -45,6 +47,7 @@ L’interface actuelle est le panneau **Clone Relief** dans la barre latérale N
 
 | Réglage | Valeur initiale | Définition |
 |---|---:|---|
+| Opacité sélection | 0,08 | Alpha appliqué au remplissage orange des faces sélectionnées dans la vue 3D; restaurer la valeur de thème antérieure à la désactivation de l’add-on. |
 | Intensité | 1,00 (100 %) | Copie intégrale du profil source. Une valeur plus faible réduit l’écart au profil copié. |
 | Gain | 1,00× | Multiplicateur séparé de l’intensité; les valeurs supérieures à 1 exagèrent le profil. |
 | Échelle du motif | 1,00 (100 %) | Échelle physique du motif transféré. La convention doit être documentée et vérifiée par test. |
@@ -59,7 +62,11 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 
 - **F-01 — Capture source :** mémoriser un morceau de faces reliées par des arêtes communes, ainsi que leur géométrie utile et les données nécessaires au calcul du relief. Si la sélection contient plusieurs morceaux et que le plus grand compte au moins deux fois plus de faces que les autres réunis, capturer le plus grand, écarter les autres de la sélection visible et signaler leur compte. Sinon, refuser la capture. La capture doit survivre aux changements de sélection.
 - **F-02 — Validité de capture :** détecter ou invalider une capture si la topologie de l’objet change après capture. Le comportement doit être explicite pour l’utilisateur.
-- **F-03 — Capture cible :** mémoriser une sélection cible distincte sur le même objet pour la V1.
+- **F-03 — Capture cible :** mémoriser une sélection cible distincte et ses
+  coordonnées initiales sur le même objet. Tant que la cible n’est pas
+  recapturée ou que sa topologie ne change pas, toute prévisualisation et toute
+  application repartent de ces coordonnées initiales; une nouvelle application
+  remplace le résultat précédent au lieu de l’empiler.
 - **F-04 — Sélections incompatibles :** refuser ou traiter explicitement une source vide, une cible vide, des groupes disjoints sans groupe dominant et un chevauchement source/cible.
 
 ### Extraction et transfert du relief
@@ -74,7 +81,7 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 ### Densité et sécurité
 
 - **F-11 — Densification locale :** proposer une subdivision locale explicite lorsque la cible est trop grossière pour représenter le motif. Ne jamais densifier globalement par défaut. Estimer le nombre de faces et appliquer un plafond de sécurité avant exécution.
-- **F-12 — Undo et sauvegarde :** l’application doit constituer une seule opération Undo. Prévoir une copie ou un mécanisme de restauration du maillage avant modification.
+- **F-12 — Undo et sauvegarde :** chaque application doit constituer une seule opération Undo. Prévoir une copie ou un mécanisme de restauration du maillage avant modification; l’Undo d’une réapplication restaure le résultat de l’application précédente.
 - **F-13 — Préservation :** ne pas supprimer les attributs ou UV existants. Ne pas modifier la géométrie extérieure à la cible, à l’exception d’un éventuel raccord explicitement inclus dans l’opération.
 - **F-14 — Topologie :** le transfert ne doit pas créer de patch superposé, de double paroi ni de surface interne. Il ne doit pas ouvrir de bord qui était fermé avant l’opération.
 - **F-15 — Diagnostics :** présenter des informations ou alertes utiles : nombres de faces source/cible, taille ou densité des arêtes, amplitude des déplacements, nombre de sommets déplacés, normales incohérentes, sélections disjointes et faces dégénérées.
@@ -83,6 +90,7 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 - **F-18 — Gain contrôlé :** conserver l’intensité comme fraction entre 0 et 1 du profil copié et offrir séparément un gain multiplicatif borné à 100× pour rendre visible une source de faible amplitude. L’aperçu doit suggérer un gain lorsque le déplacement estimé est trop faible.
 - **F-19 — Sélection visible :** refuser la capture en Wireframe ou avec X-Ray actif et expliquer que ces modes peuvent inclure l’arrière du maillage.
 - **F-20 — Messages copiables :** afficher le détail des messages sur plusieurs lignes dans le panneau; permettre de sélectionner/copier les lignes et de copier le message complet en une action.
+- **F-21 — Opacité de sélection :** proposer dans le panneau un réglage de l’alpha du remplissage orange des faces sélectionnées. Le réglage agit sur le thème de la vue 3D tant que l’add-on est actif et restaure les valeurs initiales du thème à sa désactivation.
 
 #### Décision de départ pour M3
 
@@ -140,6 +148,10 @@ Les critères suivants s’appliquent au calcul et à l’intégration. Les tol�
 11. Dans Blender 4.5.8, les captures et Apply fonctionnent sur un maillage synthétique; Undo restaure le résultat et la console ne signale pas d’exception.
 12. Un export STL de contrôle sur un objet fermé ne contient pas de défaut de manifoldness introduit par l’outil.
 13. Sur une copie du scan Pika, le profil source est reconnaissable sur la cible, le raccord est acceptable et aucune paroi supplémentaire ni ouverture n’est créée.
+14. Après plusieurs Apply avec des paramètres différents, la géométrie
+    résultante correspond toujours à la capture cible initiale; chaque opération
+    Undo restaure l’état qui la précédait.
+15. L’opacité de sélection modifie le remplissage des faces sélectionnées et la désactivation de l’add-on restaure les valeurs d’alpha antérieures du thème.
 
 Le dernier critère est une validation empirique sur données réelles; il ne peut pas être remplacé par les tests synthétiques.
 

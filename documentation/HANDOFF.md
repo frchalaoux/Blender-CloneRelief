@@ -3,7 +3,7 @@
 - **Date :** 7 novembre 2026
 - **Dépôt :** Blender-CloneRelief, branche locale staging
 - **Cible :** Blender 4.5.8 LTS sur macOS Intel; usage au trackpad, sans pavé numérique
-- **État :** M0–M4 implémentés; validation sur géométrie synthétique réussie; validation du transfert sur le scan Pika et qualification impression restent à faire
+- **État :** M0–M4 implémentés. Une mise à jour locale conserve la géométrie de départ de la cible pour les Apply répétés, ajoute l’opacité de sélection et réordonne le panneau; cette mise à jour n’a pas encore été validée dans Blender.
 
 ## Objectif et décision fonctionnelle actuelle
 
@@ -31,7 +31,11 @@ reconstruit pas les détails absents du scan.
 - **Transfert :** extraction du profil complet par rapport au plan moyen; le
   mode unidirectionnel translate tout le profil au-dessus de la cible. Le mode
   bidirectionnel garde les déplacements signés. Le gain est séparé de
-  l’intensité.
+  l’intensité. La nouvelle logique locale conserve les coordonnées initiales
+  de la cible capturée; changer les réglages puis refaire Apply doit remplacer
+  le résultat précédent plutôt que l’empiler.
+- **Opacité :** un réglage local du panneau réduit l’alpha du remplissage
+  orange de sélection; il doit restaurer le thème initial à la désactivation.
 - **Densification :** commande locale confirmée, estimation de coût, plafond
   initial de 250 000 faces ajoutées et limite de 8 coupes. Elle invalide les
   captures. Pas encore éprouvée sur un gros scan réel.
@@ -41,19 +45,29 @@ reconstruit pas les détails absents du scan.
 
 ## État Blender à la reprise
 
-La scène d’exemple ci-dessus est chargée dans Blender 4.5.8, en Edit Mode, sur
-TEST - source striee et cible plane. Les réglages enregistrés sont intensité
-1, gain 1, échelle 1, fondu 0,1 et mode OUTWARD. Les captures ne sont pas
-conservées à l’ouverture : sélectionner et capturer à nouveau source et cible
-avant un essai.
+Le dernier état observé dans Blender est le fichier Pika
+`/Users/frchalaoux/Documents/print3D/Pika/tests/Scans/butternot/butternote.blend`.
+`BUTTERNUT_010.001` est la copie de travail active; `BUTTERNUT_010` reste
+masqué. Avec la version précédemment installée de l’add-on, une capture source
+de 1 542 faces/830 sommets et une cible de 1 268 faces/694 sommets ont été
+utilisées. Le dernier Apply a modifié 564 sommets, avec un déplacement maximal
+de 0,537 mm (intensité 0,6, gain 1×, échelle 1, fondu 0,25, mode OUTWARD).
+Le fichier était marqué modifié et n’était pas enregistré.
+
+Les captures sont en mémoire et ne survivent pas à la réouverture du fichier.
+La version précédemment installée invalide aussi la cible après Apply. La mise
+à jour locale conserve la géométrie cible capturée pour refaire les aperçus et
+remplacer un résultat avec de nouveaux paramètres; elle doit être réinstallée
+avant de pouvoir l’utiliser. Vérifier que le maillage est à l’état de départ
+avant une réapplication avec cette version.
 
 **Attention :** le pont Blender charge l’add-on depuis
-~/Library/Application Support/Blender/4.5/scripts/addons/clone_relief/, alors
-que le code de référence est dans src/clone_relief/. Cette copie installée
-n’a pas été synchronisée avec les dernières modifications de l’algorithme.
-Pour tester l’algorithme actuel dans l’interface, reconstruire/réinstaller
-l’add-on depuis le dépôt puis redémarrer Blender. La génération de l’exemple et
-les smoke tests utilisent bien le code du dépôt.
+`~/Library/Application Support/Blender/4.5/scripts/addons/clone_relief/`, alors
+que le code de référence est dans `src/clone_relief/`. L’archive
+`dist/blender_clone_relief_0.1.0.zip` a été reconstruite avec les changements
+ci-dessus, mais la session Blender doit désinstaller l’ancienne copie,
+redémarrer, puis installer cette archive. Sauvegarder d’abord le fichier Pika
+si le résultat courant doit être conservé.
 
 ## Scan Pika
 
@@ -65,7 +79,7 @@ toute application ou densification. Les mesures de relief et de résolution
 faites avec l’ancienne extraction lissée doivent être refaites avec le profil
 complet actuel.
 
-## Validations acquises
+## Validations acquises avant la dernière mise à jour
 
 - .venv/bin/python -m pytest -q : **22 tests réussis**.
 - Smoke test exécuté avec Blender **4.5.8 LTS** : captures, mode de sélection,
@@ -75,19 +89,26 @@ complet actuel.
   fichier blend et le PNG ont été régénérés.
 - git diff --check sans erreur avant le commit de reprise.
 
+Le changement de référence cible, le réglage d’opacité et l’ordre des contrôles
+du panneau n’ont pas encore été testés dans Blender. Les critères correspondants
+ont été ajoutés à `SPECIFICATIONS.md`; ne pas présenter cette mise à jour comme
+validée avant exécution du smoke test et une vérification visuelle légère.
+
 Ces validations synthétiques ne remplacent pas l’inspection du résultat sur la
 courge ni le contrôle de topologie/manifoldness pour impression.
 
 ## Prochaine action
 
-1. Réinstaller depuis le dépôt l’add-on correspondant au code actuel, puis
-   redémarrer Blender.
-2. Sur une copie du fichier Pika, recapturer une zone source saine et une zone
-   cible, puis tester le transfert unidirectionnel à intensité 100 %, gain 1×,
-   échelle 1× et fondu réduit.
-3. Comparer les creux source/cible en lumière rasante, vérifier la bordure et
-   Undo. Si le résultat est plausible, densifier localement seulement si le
-   diagnostic le recommande, puis contrôler l’export sur une copie.
+1. Sauvegarder ou abandonner explicitement le résultat Pika non enregistré,
+   puis installer l’archive reconstruite et redémarrer Blender.
+2. Vérifier le réglage Opacité sélection et que le thème revient à sa valeur
+   initiale à la désactivation de l’add-on.
+3. Sur la copie de travail, capturer source et cible, faire plusieurs aperçus
+   puis plusieurs Apply avec des gains différents; confirmer que chaque Apply
+   repart de la géométrie initiale capturée, sans empilement. Vérifier Undo.
+4. Examiner ensuite le transfert sur le scan en lumière rasante. Ne pas
+   déclarer le résultat fiable pour l’impression avant vérification de la
+   bordure, des auto-intersections, des surfaces internes et de la fabricabilité.
 
 Ne pas déclarer le résultat fiable pour l’impression avant cette validation
 réelle.

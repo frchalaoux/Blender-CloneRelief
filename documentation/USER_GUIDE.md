@@ -42,6 +42,8 @@ même objet maillé :
    refuse la capture. La source et la cible doivent être sans face commune.
 3. Cliquer **Preview Effect**. L’aperçu ne modifie pas le maillage : il indique
    combien de sommets bougeraient et le déplacement maximal en millimètres.
+   Vous pouvez modifier les réglages et refaire l’aperçu autant de fois que voulu;
+   chaque calcul repart de la géométrie mémorisée lors de **Capture Target**.
 4. Si le panneau signale une cible trop grossière, lancer
    **Diagnostiquer la résolution**, puis **Densifier la cible…** et vérifier le
    nombre de faces estimé avant de confirmer. Densifier signifie ajouter des
@@ -52,13 +54,17 @@ même objet maillé :
    **Relief Gain** suggéré ou capturer une source plus texturée. Refaire
    l’aperçu jusqu’à obtenir une amplitude adaptée au résultat recherché.
 6. Cliquer **Apply Relief**. Le panneau indique si l’opération a réussi, le
-   nombre de sommets déplacés et leur déplacement maximal. Après application,
-   la cible doit être recapturée pour un nouveau transfert. L’opération est
-   annulable avec **Undo**.
+   nombre de sommets déplacés et leur déplacement maximal. La cible capturée
+   reste la référence : vous pouvez changer les réglages, refaire l’aperçu et
+   cliquer de nouveau sur **Apply Relief**. Chaque application remplace le
+   résultat précédent depuis les coordonnées capturées, sans empiler le relief.
+   L’opération est annulable avec **Undo**.
 
-Si le résultat appliqué est trop faible et que vous voulez le remplacer,
-utiliser **Undo**, recapturer la cible, régler le gain, relancer l’aperçu puis
-appliquer. Cela évite d’empiler plusieurs transferts sur la même zone.
+Pour traiter une autre zone, sélectionnez-la puis cliquez sur **Capture Target** :
+cette capture devient la nouvelle géométrie de départ. Une modification de
+topologie invalide toujours les captures et impose de recapturer source et
+cible. Après une application, les modifications manuelles des sommets de la
+cible seront remplacées par le prochain résultat calculé depuis la capture.
 
 La barre latérale affiche les comptes de faces et sommets capturés ainsi que le
 dernier résultat ou message d’erreur. Un changement de topologie invalide les
@@ -74,6 +80,7 @@ groupe dominant est retenu automatiquement, vérifier le nombre de faces
 
 | Réglage | Défaut | Effet |
 |---|---:|---|
+| Opacité sélection | 0,08 (8 %) | Réduit le remplissage orange des faces sélectionnées pour mieux voir la maille. Affecte la couleur de sélection des vues 3D pendant l’activation de l’add-on; la valeur de thème d’origine est restaurée à sa désactivation. |
 | Intensity | 1,00 | Copie le profil complet; une valeur plus faible réduit son amplitude. |
 | Relief Gain | 1,0× | Multiplie l’amplitude transférée; une valeur supérieure à 1 exagère le relief. Réglable jusqu’à 100×. |
 | Pattern Scale | 1,00 | Échelle physique du motif; 2,00 double sa longueur d’onde. |

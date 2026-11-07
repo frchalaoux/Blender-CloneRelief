@@ -206,8 +206,8 @@ def main() -> None:
         raise AssertionError("Copy Message did not place the full message on the clipboard")
     bpy.ops.ed.undo_push(message="Before Clone Relief Apply")
     assert "FINISHED" in bpy.ops.clone_relief.apply("EXEC_DEFAULT", True)
-    if not settings.target_status.startswith("À recapturer"):
-        raise AssertionError("Apply did not explain that target must be recaptured")
+    if not settings.target_status.startswith("128 faces / 81 sommets"):
+        raise AssertionError("Apply did not preserve the captured target baseline")
     if "sommets" not in settings.last_message or "déplacement max." not in settings.last_message:
         raise AssertionError("Apply did not report moved vertices and displacement")
     after_apply = _positions(obj)

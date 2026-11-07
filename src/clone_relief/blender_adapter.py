@@ -34,7 +34,8 @@ class CapturedSelection:
 def prepare_capture_view(context: bpy.types.Context) -> bool:
     """Set the active workspace to Solid, X-Ray off, and face selection mode."""
     changed = False
-    screens = (context.screen,) if context.screen is not None else tuple(bpy.data.screens)
+    screen = getattr(context, "screen", None)
+    screens = (screen,) if screen is not None else tuple(getattr(bpy.data, "screens", ()))
     for screen in screens:
         for area in screen.areas:
             if area.type != "VIEW_3D":

@@ -12,7 +12,6 @@ from .blender_adapter import (
     CapturedSelection,
     active_edit_mesh,
     capture_selection,
-    current_patch,
     prepare_capture_view,
     topology_signature,
     validate_capture,
@@ -22,6 +21,17 @@ from .relief import apply_relief, extract_relief
 
 _SOURCE_CAPTURE: CapturedSelection | None = None
 _TARGET_CAPTURE: CapturedSelection | None = None
+
+
+def _operator_is_registered(operator_class: type[bpy.types.Operator]) -> bool:
+    """Check Blender's operator registry by its ``module.name`` identifier."""
+    module_name, operator_name = operator_class.bl_idname.split(".", 1)
+    operator = getattr(getattr(bpy.ops, module_name), operator_name)
+    try:
+        operator.get_rna_type()
+    except KeyError:
+        return False
+    return True
 
 
 def _set_ui_status(
@@ -103,9 +113,11 @@ def _visibility_threshold(context: bpy.types.Context) -> float:
 
 def _through_selection_enabled(context: bpy.types.Context) -> bool:
     """Whether the active 3D View can select faces through the visible surface."""
-    area = context.area if context.area and context.area.type == "VIEW_3D" else None
-    if area is None and context.screen is not None:
-        area = next((item for item in context.screen.areas if item.type == "VIEW_3D"), None)
+    context_area = getattr(context, "area", None)
+    area = context_area if context_area and context_area.type == "VIEW_3D" else None
+    screen = getattr(context, "screen", None)
+    if area is None and screen is not None:
+        area = next((item for item in screen.areas if item.type == "VIEW_3D"), None)
     if area is None:
         return False
     space = area.spaces.active
@@ -119,6 +131,9 @@ def _prepare_after_file_load(_unused: object) -> None:
     _SOURCE_CAPTURE = None
     _TARGET_CAPTURE = None
     prepare_capture_view(bpy.context)
+    from .ui import apply_selection_opacity
+
+    apply_selection_opacity(bpy.context)
     settings = getattr(bpy.context.scene, "clone_relief_settings", None)
     if settings is not None:
         _set_ui_status(
@@ -166,7 +181,10 @@ def _evaluate_transfer(
         raise ValueError("Source et cible se chevauchent : recapturez une cible sans face commune")
 
     source = _SOURCE_CAPTURE.as_patch()
-    target = current_patch(_TARGET_CAPTURE, obj, bm)
+    # Every preview/apply uses the coordinates saved by Capture Target. This
+    # makes reapplying with new settings replace the previous result instead
+    # of stacking another transfer on the already modified mesh.
+    target = _TARGET_CAPTURE.as_patch()
     field, _ = extract_relief(source)
     updated = apply_relief(
         field,
@@ -303,7 +321,7 @@ def _subdivision_plan(
     affected = {face for edge in edges for face in edge.link_faces}
     affected_faces = tuple(sorted(affected, key=lambda face: face.index))
     source_patch = _SOURCE_CAPTURE.as_patch()
-    target_patch = current_patch(_TARGET_CAPTURE, obj, bm)
+    target_patch = _TARGET_CAPTURE.as_patch()
     resolution = analyze_resolution(source_patch, target_patch)
     estimated_faces = estimate_face_count_upper_bound(
         len(bm.faces),
@@ -371,7 +389,7 @@ class CLONERELIEF_OT_capture_target(bpy.types.Operator):
 
     bl_idname = "clone_relief.capture_target"
     bl_label = "Capture Relief Target"
-    bl_description = "Store the selected connected face region as the relief target"
+    bl_description = "Store the selected target region and its starting geometry for repeatable applications"
 
     @classmethod
     def poll(cls, context: bpy.types.Context) -> bool:
@@ -434,7 +452,7 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
 
     bl_idname = "clone_relief.apply"
     bl_label = "Apply Clone Relief"
-    bl_description = "Transfer captured source microrelief to the captured target"
+    bl_description = "Apply or replace the relief using the captured target geometry as the baseline"
     bl_options = {"REGISTER", "UNDO"}
 
     intensity: FloatProperty(name="Intensity", default=1.0, min=0.0, max=1.0)
@@ -457,7 +475,6 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
         return context.edit_object is not None and context.edit_object.type == "MESH"
 
     def execute(self, context: bpy.types.Context) -> set[str]:
-        global _TARGET_CAPTURE
         try:
             obj, bm, target_capture, updated, moved, maximum = _evaluate_transfer(
                 context,
@@ -475,30 +492,36 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
             return {"CANCELLED"}
 
         write_world_coordinates(obj, bm, target_capture.vertex_indices, updated)
-        _TARGET_CAPTURE = None
         magnitude = _format_displacement(context, maximum)
         warning_threshold = _visibility_threshold(context)
         if moved == 0:
-            message = "Aucun sommet déplacé : aucune modification géométrique. Vérifiez les captures."
+            message = (
+                "Aucun relief produit. La cible a été rétablie depuis sa géométrie capturée; "
+                "la capture reste active pour ajuster les paramètres et réessayer."
+            )
             level, report_level = "WARNING", "WARNING"
         elif maximum < warning_threshold:
             message = (
-                f"Relief appliqué, mais très faible : {moved}/{len(target_capture.vertex_indices)} "
+                f"Relief appliqué depuis la géométrie cible capturée, mais très faible : "
+                f"{moved}/{len(target_capture.vertex_indices)} "
                 f"sommets; déplacement max. {magnitude}; mode {_direction_label(self.direction)}. "
-                "Choisissez une source plus texturée, "
-                "augmentez Relief Gain ou densifiez si le diagnostic le recommande. "
-                "Pour remplacer cet essai, faites Undo puis recapturez la cible."
+                "Ajustez les paramètres et réappliquez; le résultat repartira de la même géométrie capturée."
             )
             level, report_level = "WARNING", "WARNING"
         else:
             message = (
-                f"Réussite : relief appliqué à {moved}/{len(target_capture.vertex_indices)} sommets; "
-                f"déplacement max. {magnitude}; mode {_direction_label(self.direction)}. Annuler avec Undo."
+                f"Réussite : relief recalculé depuis la cible capturée sur "
+                f"{moved}/{len(target_capture.vertex_indices)} sommets; déplacement max. {magnitude}; "
+                f"mode {_direction_label(self.direction)}. Changez les paramètres puis réappliquez, "
+                "ou recapturez une autre cible. Annuler avec Undo."
             )
             level, report_level = "INFO", "INFO"
         _set_ui_status(
             context,
-            target="À recapturer avant une nouvelle application",
+            target=(
+                f"{len(target_capture.face_indices)} faces / {len(target_capture.vertex_indices)} sommets "
+                "— référence conservée"
+            ),
             message=message,
             level=level,
         )
@@ -660,7 +683,8 @@ _CLASSES: tuple[type[bpy.types.Operator], ...] = (
 def register() -> None:
     """Register the minimal Clone Relief operator set."""
     for operator_class in _CLASSES:
-        bpy.utils.register_class(operator_class)
+        if not _operator_is_registered(operator_class):
+            bpy.utils.register_class(operator_class)
     if _prepare_after_file_load not in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(_prepare_after_file_load)
     prepare_capture_view(bpy.context)
@@ -671,8 +695,9 @@ def unregister() -> None:
     if _prepare_after_file_load in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(_prepare_after_file_load)
     for operator_class in reversed(_CLASSES):
-        try:
-            bpy.utils.unregister_class(operator_class)
-        except RuntimeError:
-            # The class may already have been unregistered during a reload.
-            pass
+        if _operator_is_registered(operator_class):
+            try:
+                bpy.utils.unregister_class(operator_class)
+            except RuntimeError:
+                # The class may already have been unregistered during a reload.
+                pass

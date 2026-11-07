@@ -6,6 +6,61 @@ import bpy
 from bpy.props import CollectionProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
 
 
+_SELECTION_THEME_COLORS = ("face_select", "face_mode_select")
+_ORIGINAL_SELECTION_OPACITY: dict[str, float] | None = None
+
+
+def _theme_view_3d():
+    preferences = getattr(bpy.context, "preferences", None)
+    themes = getattr(preferences, "themes", ()) if preferences is not None else ()
+    return themes[0].view_3d if themes else None
+
+
+def _remember_selection_theme() -> None:
+    global _ORIGINAL_SELECTION_OPACITY
+    if _ORIGINAL_SELECTION_OPACITY is not None:
+        return
+    view_3d = _theme_view_3d()
+    if view_3d is not None:
+        _ORIGINAL_SELECTION_OPACITY = {
+            name: float(getattr(view_3d, name)[3])
+            for name in _SELECTION_THEME_COLORS
+        }
+
+
+def _apply_selection_opacity(opacity: float) -> None:
+    _remember_selection_theme()
+    view_3d = _theme_view_3d()
+    if view_3d is None:
+        return
+    for name in _SELECTION_THEME_COLORS:
+        color = tuple(getattr(view_3d, name))
+        setattr(view_3d, name, (*color[:3], opacity))
+
+
+def apply_selection_opacity(context: bpy.types.Context) -> None:
+    """Apply the scene's selection opacity to Blender's active viewport theme."""
+    scene = getattr(context, "scene", None)
+    settings = getattr(scene, "clone_relief_settings", None) if scene is not None else None
+    if settings is not None:
+        _apply_selection_opacity(settings.selection_opacity)
+
+
+def _selection_opacity_updated(settings: bpy.types.PropertyGroup, _context: bpy.types.Context) -> None:
+    _apply_selection_opacity(settings.selection_opacity)
+
+
+def _restore_selection_theme() -> None:
+    global _ORIGINAL_SELECTION_OPACITY
+    view_3d = _theme_view_3d()
+    if view_3d is None or _ORIGINAL_SELECTION_OPACITY is None:
+        return
+    for name, opacity in _ORIGINAL_SELECTION_OPACITY.items():
+        color = tuple(getattr(view_3d, name))
+        setattr(view_3d, name, (*color[:3], opacity))
+    _ORIGINAL_SELECTION_OPACITY = None
+
+
 class CLONERELIEF_PG_message_line(bpy.types.PropertyGroup):
     """One selectable and copyable line from the latest operator message."""
 
@@ -44,6 +99,15 @@ class CLONERELIEF_UL_message_lines(bpy.types.UIList):
 class CLONERELIEF_PG_settings(bpy.types.PropertyGroup):
     """Persistent user-facing settings for Clone Relief operators."""
 
+    selection_opacity: FloatProperty(
+        name="Opacité de sélection",
+        description="Réduit le remplissage orange des faces sélectionnées dans la vue 3D",
+        default=0.08,
+        min=0.0,
+        max=1.0,
+        subtype="FACTOR",
+        update=_selection_opacity_updated,
+    )
     intensity: FloatProperty(
         name="Intensity",
         description="Scale the transferred source relief amplitude",
@@ -144,6 +208,7 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         else:
             layout.label(text="Active mesh ready")
         layout.label(text=f"Mode: {context.mode.replace('_', ' ').title()}")
+        layout.prop(settings, "selection_opacity", text="Opacité sélection")
 
         layout.label(text="1. Capture one connected source region")
         layout.label(text="Ombrage Solid et X-Ray désactivé : seule la surface visible est sélectionnée.")
@@ -151,8 +216,9 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         column.operator("clone_relief.capture_source", text="Capture Source")
         column.label(text=f"Source: {settings.source_status}")
         layout.label(text="2. Select a separate target region on this same mesh")
-        column.operator("clone_relief.capture_target", text="Capture Target")
-        column.label(text=f"Target: {settings.target_status}")
+        target_column = layout.column(align=True)
+        target_column.operator("clone_relief.capture_target", text="Capture Target")
+        target_column.label(text=f"Target: {settings.target_status}")
 
         layout.separator()
         layout.label(text="3. Preview, adjust, then apply")
@@ -239,22 +305,50 @@ _CLASSES: tuple[
 )
 
 
+def _registered_class(cls: type) -> type | None:
+    """Look up a registered UI class through its Blender RNA base type."""
+    for base in (bpy.types.PropertyGroup, bpy.types.UIList, bpy.types.Panel):
+        if issubclass(cls, base):
+            return base.bl_rna_get_subclass_py(cls.__name__, None)
+    return None
+
+
 def register() -> None:
     """Register settings and the Clone Relief 3D View panel."""
-    for cls in _CLASSES:
-        bpy.utils.register_class(cls)
-    bpy.types.Scene.clone_relief_settings = bpy.props.PointerProperty(
-        type=CLONERELIEF_PG_settings,
-    )
+    registered = tuple(_registered_class(cls) for cls in _CLASSES)
+    if not all(current is cls for current, cls in zip(registered, _CLASSES)):
+        # Remove the property before its PropertyGroup, then clear any stale
+        # classes left by a failed or repeated enable attempt.
+        if hasattr(bpy.types.Scene, "clone_relief_settings"):
+            del bpy.types.Scene.clone_relief_settings
+        for cls in reversed(_CLASSES):
+            current = _registered_class(cls)
+            if current is not None:
+                try:
+                    bpy.utils.unregister_class(current)
+                except RuntimeError:
+                    pass
+        for cls in _CLASSES:
+            bpy.utils.register_class(cls)
+    if not hasattr(bpy.types.Scene, "clone_relief_settings"):
+        bpy.types.Scene.clone_relief_settings = bpy.props.PointerProperty(
+            type=CLONERELIEF_PG_settings,
+        )
+    _remember_selection_theme()
+    apply_selection_opacity(bpy.context)
 
 
 def unregister() -> None:
     """Remove the panel and its scene settings."""
+    _restore_selection_theme()
     if hasattr(bpy.types.Scene, "clone_relief_settings"):
         del bpy.types.Scene.clone_relief_settings
     for cls in reversed(_CLASSES):
+        current = _registered_class(cls)
+        if current is None:
+            continue
         try:
-            bpy.utils.unregister_class(cls)
+            bpy.utils.unregister_class(current)
         except RuntimeError:
             # The class may already have been unregistered during a reload.
             pass
