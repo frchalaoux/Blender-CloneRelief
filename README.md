@@ -6,6 +6,8 @@ permet de régler le transfert avant de l’appliquer.
 
 **Version :** 0.1.0 · **Blender cible :** 4.5.8 LTS · **Plateforme de référence :** macOS Intel
 
+**Versions et tags :** [liste complète des tags GitHub](https://github.com/frchalaoux/Blender-CloneRelief/tags). Aucune version stable ou de développement n’est publiée pour le moment.
+
 > Clone Relief est un prototype. Il n’est pas encore qualifié pour garantir
 > qu’un maillage soit imprimable.
 
