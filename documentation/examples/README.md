@@ -4,6 +4,18 @@
 
 Cette démonstration synthétique compare le profil source échantillonné, la cible
 plane avant transfert et le résultat après transfert.
+
+![Détail du profil source strié](../images/source-profile-detail.png)
+
+*Profil source utilisé par la scène.*
+
+![Détail de la cible plane avant transfert](../images/target-before-detail.png)
+
+*La cible est plane avant application du relief.*
+
+![Détail de la cible après transfert](../images/target-after-detail.png)
+
+*Le motif source apparaît sur la cible après transfert.*
 Elle utilise les opérateurs Clone Relief dans Blender 4.5.8 : **Intensity 1,0**,
 **Relief Gain 1×**, **Pattern Scale 1,0**, **Edge Falloff 0,10** et le mode
 unidirectionnel par défaut. La source est un motif sinusoïdal régulier et la

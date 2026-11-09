@@ -1,7 +1,8 @@
 # Guide utilisateur — Clone Relief
 
-**Prototype :** version 0.1.0 pour Blender 4.5.8 LTS. L’outil n’a pas encore
-été validé sur le scan Pika ni qualifié pour l’impression 3D.
+**Prototype :** version 0.1.0 pour Blender 4.5.8 LTS. Le contrôle M5 a été
+utilisé sur un scan Pika, mais le transfert n’y a pas encore été validé et
+l’add-on n’est pas qualifié pour l’impression 3D.
 
 ## Installation sur macOS
 
@@ -35,6 +36,11 @@ même objet maillé :
    les faces d’une zone saine assez texturée, puis cliquer **Capture Source**.
    Le panneau donne le nombre de faces et de sommets capturés. Si tu
    désélectionnes la zone ensuite, **Reselect Source** la rétablit.
+
+   ![Dans la scène de démonstration, seul le profil strié source est sélectionné en orange.](images/source-selection-demo.jpg)
+
+   *Démonstration synthétique : la sélection orange est limitée au profil source; la cible à droite reste désélectionnée.*
+
 2. Sélectionner les faces de la zone cible, puis cliquer **Capture Target**.
    Les faces doivent former un morceau continu, relié par des arêtes. Si la
    sélection touche aussi de petits morceaux disjoints, l’outil garde le groupe
@@ -42,6 +48,11 @@ même objet maillé :
    les autres réunis; il affiche alors le nombre de faces écartées. Sinon, il
    refuse la capture. La source et la cible doivent être sans face commune.
    **Reselect Target** rétablit ensuite la cible capturée, y compris après Apply.
+
+   ![Dans la scène de démonstration, seule la cible plane à droite est sélectionnée en orange.](images/target-selection-demo.jpg)
+
+   *La source striée reste visible à gauche pour repérer les deux zones du même maillage.*
+
 3. Cliquer **Preview Effect**. L’aperçu ne modifie pas le maillage : il indique
    combien de sommets bougeraient et le déplacement maximal en millimètres.
    Vous pouvez modifier les réglages et refaire l’aperçu autant de fois que voulu;
@@ -76,6 +87,14 @@ disparaissent à la fermeture du fichier ou au rechargement de l’add-on.
 La barre latérale affiche les comptes de faces et sommets capturés ainsi que le
 dernier résultat ou message d’erreur. Un changement de topologie invalide les
 captures.
+
+### Repère dans l’interface
+
+Le schéma ci-dessous présente les sections et commandes de l’onglet **Clone Relief**
+actuelles. C’est un repère de lecture, pas une capture d’écran : Blender ajuste
+la mise en page selon la taille du panneau et son thème.
+
+![Schéma de l’onglet Clone Relief dans la barre latérale N](images/clone-relief-panel-guide.svg)
 
 Une capture refusée avec plusieurs groupes indique le nombre de morceaux
 séparés par des arêtes. Garder uniquement le morceau souhaité et recapturer;
@@ -134,10 +153,45 @@ Plusieurs composantes peuvent être voulues, et un résultat sans défaut détec
 ne certifie pas qu’un solide soit imprimable : les auto-intersections et
 surfaces internes ne sont pas recherchées.
 
-Si plusieurs composantes sont signalées, **Localiser une composante…** ouvre
-leur liste avec le nombre de faces. Choisir une entrée sélectionne cette
-composante et centre la vue 3D dessus, sans modifier la géométrie. Le contrôle
-doit être relancé si la topologie change.
+### Procédure pas à pas
+
+1. Dans l’Outliner, déplie la scène et choisis le **maillage à examiner**.
+   Réaffiche-le avec l’icône œil s’il est masqué, puis rends-le actif. Le
+   contrôle porte sur cet objet uniquement; il ne combine pas plusieurs objets
+   sélectionnés.
+2. Clique **Contrôler la topologie pour l’impression**. Cette commande marche
+   en Object Mode et en Edit Mode. Lis le compte rendu Clone Relief dans le
+   panneau N, sous les commandes de l’add-on. Le rapport ne change pas la
+   sélection ni la géométrie.
+3. Lis **Composantes reliées par arêtes**. Une composante est un groupe de
+   faces qui se rejoignent par des arêtes. Plusieurs composantes indiquent des
+   îlots distincts dans ce même objet; cela ne signifie pas à lui seul qu’ils
+   se croisent ou qu’il faut les supprimer.
+4. Pour examiner un îlot, laisse le même objet actif, passe en **Edit Mode**,
+   puis clique **Localiser une composante…**. Choisis dans la liste la ligne
+   indiquant son rang et son nombre de faces, puis confirme. Clone Relief
+   remplace la sélection courante par celle de cet îlot et cadre la vue dessus;
+   il ne supprime ni ne déplace aucune géométrie.
+5. Pour examiner un autre objet, quitte Edit Mode, choisis cet objet dans
+   l’Outliner et recommence. « Localiser » ne s’active pas en Object Mode et
+   n’a rien à proposer si l’objet actif ne comporte qu’une seule composante.
+   Si la topologie change pendant que la liste de choix est ouverte, annule et
+   relance la localisation.
+
+Le nombre de composantes dépend de l’objet choisi. Dans le fichier d’analyse
+M6 de la butternut, `BUTTERNUT_010` (original) en comporte trois;
+`BUTTERNUT_010.001` (copie de travail) et `M6_FORMWARE_REPAIRED_TEMP` (STL
+Formware importé) en comportent chacun une. Le contrôle topologique reste utile
+sur le STL Formware, car il signale des bords ouverts, des arêtes non-manifold
+et des faces dégénérées; le localisateur, lui, ne trouvera pas d’îlot distinct
+dans cet objet.
+
+Pour une analyse plus complète, Blender propose l’extension
+[3D Print Toolbox](https://extensions.blender.org/add-ons/print3d-toolbox/),
+compatible avec Blender 4.2 et ultérieur. Elle fournit notamment les contrôles
+Solid, Intersections, Degenerate, Thickness, Shells, Edge Sharp et Overhang.
+Le rapport Clone Relief reste utile pour repérer et localiser les composantes;
+il ne remplace pas ces contrôles.
 
 Après **Apply Relief**, cliquer **Comparer la cible avant/après** en Edit Mode
 pour construire une paire temporaire de surfaces côte à côte depuis la cible
@@ -146,6 +200,10 @@ comparaison. Ces surfaces sont des copies ouvertes pour inspection visuelle,
 pas des pièces imprimables. Cliquer **Revenir au maillage de travail** avant de
 reprendre l’édition ou l’export. Cette comparaison porte uniquement sur les
 faces de la cible capturée.
+
+![Profil source, cible avant transfert et cible après transfert dans l’exemple synthétique.](examples/clone_relief_before_after.png)
+
+*Résultat illustratif obtenu sur une scène de test; il ne prédit pas le résultat sur un scan réel.*
 
 **Exporter le maillage actif en STL (mm)…** ouvre le sélecteur de fichier et
 exporte uniquement l’objet maillé actif, avec ses modificateurs évalués. La
@@ -157,6 +215,11 @@ L’export est un contrôle de transfert; il ne répare ni ne certifie la
 fabricabilité du maillage. Blender expose le choix d’export des objets
 sélectionnés, l’échelle, l’unité de scène, les axes et l’application des
 modificateurs dans son [manuel STL 4.5](https://docs.blender.org/manual/en/4.5/files/import_export/stl.html).
+
+La qualification d’un résultat concret avec le 3D Print Toolbox, le trancheur
+et une impression représentative est détaillée dans le
+[protocole M6](PRINT_QUALIFICATION.md). Ce protocole ne constitue pas une
+garantie générale d’imprimabilité.
 
 ## Validation sur une copie de la courge
 
@@ -181,11 +244,10 @@ Le transfert crée un motif plausible; il ne récupère pas les détails réelle
 perdus du scan. Le prototype ne remplace pas une vérification des
 auto-intersections, des parois internes, du manifoldness ou de la fabricabilité.
 
-## Image du panneau
+## Repères visuels
 
-Panneau capturé dans Blender 4.5.8 sur macOS :
-
-![Panneau Clone Relief dans la vue 3D](images/clone-relief-panel.png)
-
-La capture montre le panneau en Object Mode; les commandes de capture et
-d’application s’activent en Edit Mode.
+Les captures de sélection ci-dessus proviennent de la scène de démonstration
+fournie avec le dépôt. Elles montrent les faces choisies, pas une capture réelle.
+La [scène Blender synthétique](examples/README.md) permet de refaire le parcours
+sans modifier un scan de production. Les panneaux de comparaison sont des surfaces
+de démonstration ouvertes; ils ne sont pas des pièces imprimables.

@@ -1,7 +1,8 @@
 # Spécifications — Clone Relief
 
 - **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
-- **État :** spécification de référence; M0–M4 réalisés. Le contrôle
+- **État :** spécification de référence; M0–M4 réalisés. M5 est implémenté;
+  M6 prépare la qualification du résultat sur un cas d’impression défini. Le contrôle
   topologique et la localisation de composantes M5 ont été utilisés sur le scan
   Pika; deux composantes internes ont été supprimées, puis un audit a confirmé
   une composante sans défaut topologique détecté. La comparaison avant/après,
@@ -183,6 +184,7 @@ Le dernier critère est une validation empirique sur données réelles; il ne pe
 4. **M3 — Densification locale :** diagnostic de résolution, estimation de coût, subdivision locale encadrée.
 5. **M4 — UX :** panneau N, réglages, diagnostics et documentation d’utilisation sur macOS.
 6. **M5 — Impression 3D :** contrôle topologique indicatif, comparaison temporaire avant/après et export STL du maillage actif en millimètres; valider le flux sur un objet de test puis sur une copie du scan.
+7. **M6 — Qualification d’un cas d’impression :** s’appuyer sur le 3D Print Toolbox pour les contrôles géométriques déjà disponibles, vérifier le résultat sur la copie du scan, valider l’export et l’aperçu couche par couche dans un trancheur identifié, puis consigner une impression représentative. Ne pas réimplémenter dans Clone Relief les contrôles que cette extension fournit déjà. La qualification reste limitée au modèle, à la machine, au matériau et au profil vérifiés.
 
 ## 10. Décisions à valider pendant le prototypage
 

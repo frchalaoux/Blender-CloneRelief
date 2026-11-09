@@ -104,6 +104,12 @@ longueur d’onde.
   avant/après et l’export STL, notamment ses dimensions dans un trancheur,
   restent à valider. Le contrôle n’analyse ni les auto-intersections ni les
   surfaces internes.
+- M6 réutilise le 3D Print Toolbox pour l’analyse géométrique de fabricabilité
+  plutôt que de réimplémenter ses contrôles. Clone Relief garde son résumé
+  topologique et son localisateur de composantes. Le protocole de qualification
+  d’un cas concret (scan Pika, trancheur et impression) est dans
+  [Qualification pour l’impression](PRINT_QUALIFICATION.md); ces validations
+  restent à effectuer.
 
 ## Smoke test Blender
 

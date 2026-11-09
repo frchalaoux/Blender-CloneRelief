@@ -313,7 +313,7 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
             layout.operator(
                 "clone_relief.compare_target",
                 text="Comparer la cible avant/après",
-                icon="MOD_DIFFERENCE",
+                icon="MODIFIER",
             )
         else:
             layout.operator(
