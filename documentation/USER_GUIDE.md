@@ -1,5 +1,7 @@
 # Guide utilisateur — Clone Relief
 
+[English translation](USER_GUIDE.en.md)
+
 **Prototype :** version 0.1.0 pour Blender 4.5.8 LTS. Le contrôle M5 a été
 utilisé sur un scan Pika, mais le transfert n’y a pas encore été validé et
 l’add-on n’est pas qualifié pour l’impression 3D.

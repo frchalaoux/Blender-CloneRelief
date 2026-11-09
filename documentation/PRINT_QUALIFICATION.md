@@ -1,5 +1,7 @@
 # Qualification pour l’impression 3D
 
+[English translation](PRINT_QUALIFICATION.en.md)
+
 ## Portée
 
 La qualification porte sur un résultat précis, pour un modèle, une imprimante,

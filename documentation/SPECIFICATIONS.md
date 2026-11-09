@@ -1,5 +1,7 @@
 # Spécifications — Clone Relief
 
+[English translation](SPECIFICATIONS.en.md)
+
 - **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
 - **État :** spécification de référence; M0–M4 réalisés. M5 est implémenté;
   M6 prépare la qualification du résultat sur un cas d’impression défini. Le contrôle

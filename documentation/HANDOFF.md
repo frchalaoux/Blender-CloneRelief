@@ -1,5 +1,7 @@
 # HANDOFF — Blender Clone Relief
 
+[English translation](HANDOFF.en.md)
+
 - **Date :** 7 novembre 2026
 - **Dépôt :** Blender-CloneRelief, branche locale staging
 - **Cible :** Blender 4.5.8 LTS sur macOS Intel; usage au trackpad, sans pavé numérique

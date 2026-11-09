@@ -1,5 +1,7 @@
 # Développement
 
+[English translation](DEVELOPMENT.en.md)
+
 ## Environnement de référence
 
 - Blender **4.5.8 LTS** sur macOS Intel.

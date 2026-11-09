@@ -9,3 +9,5 @@ build/
 *.egg-info/
 .DS_Store
 documentation/SCAN_WORKFLOW_HANDOFF.md
+
+documentation/SCAN_WORKFLOW_HANDOFF.en.md

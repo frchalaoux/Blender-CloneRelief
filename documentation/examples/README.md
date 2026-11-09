@@ -1,5 +1,7 @@
 # Exemple avant/après
 
+[English translation](README.en.md)
+
 ![Profil source, cible avant transfert et cible après transfert](clone_relief_before_after.png)
 
 Cette démonstration synthétique compare le profil source échantillonné, la cible
