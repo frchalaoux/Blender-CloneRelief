@@ -18,6 +18,7 @@ from .blender_adapter import (
     write_world_coordinates,
 )
 from .relief import apply_relief, extract_relief
+from .i18n import format_message, translate
 
 _SOURCE_CAPTURE: CapturedSelection | None = None
 _TARGET_CAPTURE: CapturedSelection | None = None
@@ -31,7 +32,7 @@ def _component_inspection_items(
     _context: bpy.types.Context,
 ) -> list[tuple[str, str, str]]:
     """Keep dynamic component enum strings alive for Blender's RNA property."""
-    return _COMPONENT_INSPECTION_ITEMS or [("0", "Aucune composante chargée", "")]
+    return _COMPONENT_INSPECTION_ITEMS or [("0", translate("No components loaded"), "")]
 
 
 def _operator_is_registered(operator_class: type[bpy.types.Operator]) -> bool:
@@ -86,12 +87,12 @@ def _capture_component_note(capture: CapturedSelection) -> tuple[str, str]:
         return "", "INFO"
     ignored_faces = sum(capture.ignored_component_sizes)
     ignored_groups = len(capture.ignored_component_sizes)
-    group_word = "groupe" if ignored_groups == 1 else "groupes"
-    disconnected_word = "disjoint" if ignored_groups == 1 else "disjoints"
-    face_word = "face écartée" if ignored_faces == 1 else "faces écartées"
     return (
-        f" Groupe principal retenu; {ignored_faces} {face_word} "
-        f"sur {ignored_groups} {group_word} {disconnected_word}. Vérifie la sélection.",
+        format_message(
+            "Selected the largest group; ignored {faces} faces in {groups} disconnected groups. Check the selection.",
+            faces=ignored_faces,
+            groups=ignored_groups,
+        ),
         "WARNING",
     )
 
@@ -131,7 +132,8 @@ def _restore_captured_face_selection(
 ) -> None:
     """Restore a captured face region as the current Edit Mode selection."""
     if capture is None:
-        raise ValueError(f"Aucune sélection {role_label} capturée dans cette session.")
+        role = "source" if role_label == "source" else "target"
+        raise ValueError(format_message("No {role} selection captured in this session.", role=translate(role)))
     obj, bm = active_edit_mesh(context)
     validate_capture(capture, obj, bm)
     _select_face_indices(context, obj, bm, capture.face_indices)
@@ -145,14 +147,14 @@ def _format_displacement(context: bpy.types.Context, value: float) -> str:
         if millimetres < 0.01:
             return f"{millimetres * 1000:.1f} µm"
         return f"{millimetres:.3f} mm"
-    return f"{value:.6g} unités Blender"
+    return f"{value:.6g} {translate('Blender units')}"
 
 
 def _direction_label(direction: str) -> str:
     """Return a concise user-facing description of the selected transfer mode."""
     if direction == "OUTWARD":
-        return "unidirectionnel, au-dessus de la cible"
-    return "bidirectionnel, creux et bosses"
+        return translate("Unidirectional, above the target")
+    return translate("Bidirectional, peaks and valleys")
 
 
 def _visibility_threshold(context: bpy.types.Context) -> float:
@@ -190,11 +192,10 @@ def _prepare_after_file_load(_unused: object) -> None:
     if settings is not None:
         _set_ui_status(
             bpy.context,
-            source="Non capturée",
-            target="Non capturée",
-            message=(
-                "Fichier ouvert : vue préparée en Solid, X-Ray désactivé et sélection de faces. "
-                "Sélectionnez puis capturez la source."
+            source="Not captured",
+            target="Not captured",
+            message=format_message(
+                "File opened: view prepared in Solid shading, X-Ray off, face selection enabled. Select and capture the source."
             ),
             level="INFO",
         )
@@ -205,8 +206,9 @@ def _reject_through_selection(context: bpy.types.Context) -> None:
     if _through_selection_enabled(context):
         prepare_capture_view(context)
         raise ValueError(
-            "La vue a été préparée : Solid, X-Ray désactivé, sélection de faces. "
-            "Refaites la sélection de surface puis relancez la capture."
+            format_message(
+                "The view was prepared: Solid shading, X-Ray off, face selection enabled. Reselect the surface, then capture again."
+            )
         )
 
 
@@ -222,15 +224,17 @@ def _evaluate_transfer(
 ) -> tuple[bpy.types.Object, bmesh.types.BMesh, CapturedSelection, tuple[tuple[float, float, float], ...], int, float]:
     """Validate captures and calculate a transfer without changing the mesh."""
     if _SOURCE_CAPTURE is None:
-        raise ValueError("Aucune source capturée. Sélectionnez la source puis cliquez Capture Source.")
+        raise ValueError(format_message("No source captured. Select the source, then click Capture Source."))
     if _TARGET_CAPTURE is None:
-        raise ValueError("La source est conservée, mais la cible doit être recapturée avant l’aperçu ou l’application.")
+        raise ValueError(
+            format_message("The source is preserved, but recapture the target before previewing or applying.")
+        )
     obj, bm = active_edit_mesh(context)
     signature = topology_signature(bm)
     validate_capture(_SOURCE_CAPTURE, obj, bm, current_signature=signature)
     validate_capture(_TARGET_CAPTURE, obj, bm, current_signature=signature)
     if set(_SOURCE_CAPTURE.face_indices).intersection(_TARGET_CAPTURE.face_indices):
-        raise ValueError("Source et cible se chevauchent : recapturez une cible sans face commune")
+        raise ValueError(format_message("Source and target overlap; select distinct faces."))
 
     source = _SOURCE_CAPTURE.as_patch()
     # Every preview/apply uses the coordinates saved by Capture Target. This
@@ -273,8 +277,8 @@ class CLONERELIEF_OT_preview(bpy.types.Operator):
         name="Relief Direction",
         description="Keep the relief above the target or preserve positive and negative source details",
         items=(
-            ("OUTWARD", "Unidirectionnel (+ normale)", "Only displace outward along target normals"),
-            ("BIDIRECTIONAL", "Bidirectionnel (± normale)", "Keep positive and negative source deviations"),
+            ("OUTWARD", "Unidirectional (+ normal)", "Only displace outward along target normals"),
+            ("BIDIRECTIONAL", "Bidirectional (± normal)", "Keep positive and negative source deviations"),
         ),
         default="OUTWARD",
     )
@@ -295,37 +299,47 @@ class CLONERELIEF_OT_preview(bpy.types.Operator):
                 direction=self.direction,
             )
         except (ValueError, RuntimeError, ArithmeticError) as error:
-            message = str(error)
+            message = translate(str(error))
             _set_ui_status(context, message=message, level="ERROR")
-            self.report({"ERROR"}, "Aperçu impossible. Consultez le détail dans le panneau Clone Relief.")
+            self.report({"ERROR"}, translate("Preview failed. See the details in the Clone Relief panel."))
             return {"CANCELLED"}
 
         magnitude = _format_displacement(context, maximum)
         if moved == 0:
-            message = "Aucun sommet ne bougerait. Vérifiez les captures et l’échelle du motif."
+            message = format_message("No vertices would move. Check the captures and pattern scale.")
             level, report_level = "WARNING", "WARNING"
         elif maximum < _visibility_threshold(context):
             desired_gain = self.gain * (_visibility_threshold(context) / maximum)
             gain_advice = (
-                f"Essayez Relief Gain ≈ {desired_gain:.1f}×. "
+                format_message("Try Relief Gain ≈ {gain}×. ", gain=f"{desired_gain:.1f}")
                 if desired_gain <= 100.0
-                else "Même 100× ne suffira probablement pas : choisissez une source plus texturée. "
+                else format_message("Even 100× may not be enough; choose a more textured source. ")
             )
             message = (
-                f"Aperçu très faible : {moved}/{len(target.vertex_indices)} sommets, "
-                f"déplacement max. {magnitude}; mode {_direction_label(self.direction)}. {gain_advice}"
-                "Densifiez si le diagnostic le recommande."
+                format_message(
+                    "Very subtle preview: {moved}/{total} vertices; max displacement {magnitude}; mode {direction}. ",
+                    moved=moved,
+                    total=len(target.vertex_indices),
+                    magnitude=magnitude,
+                    direction=_direction_label(self.direction),
+                )
+                + gain_advice
+                + translate("Subdivide the target if the resolution diagnostic recommends it.")
             )
             level, report_level = "WARNING", "WARNING"
         else:
             message = (
-                f"Aperçu : {moved}/{len(target.vertex_indices)} sommets bougeraient; "
-                f"déplacement max. {magnitude}; mode {_direction_label(self.direction)}. "
-                "Le maillage n’a pas été modifié."
+                format_message(
+                    "Preview: {moved}/{total} vertices would move; max displacement {magnitude}; mode {direction}. The mesh was not changed.",
+                    moved=moved,
+                    total=len(target.vertex_indices),
+                    magnitude=magnitude,
+                    direction=_direction_label(self.direction),
+                )
             )
             level, report_level = "INFO", "INFO"
         _set_ui_status(context, message=message, level=level)
-        self.report({report_level}, "Aperçu terminé. Consultez le résultat détaillé dans Clone Relief.")
+        self.report({report_level}, translate("Preview complete. See the detailed result in Clone Relief."))
         return {"FINISHED"}
 
 
@@ -333,8 +347,8 @@ class CLONERELIEF_OT_copy_message(bpy.types.Operator):
     """Copy the full latest message to the system clipboard."""
 
     bl_idname = "clone_relief.copy_message"
-    bl_label = "Copier le message Clone Relief"
-    bl_description = "Copier le texte complet du dernier message dans le presse-papiers"
+    bl_label = "Copy Clone Relief Message"
+    bl_description = "Copy the full latest message to the clipboard"
 
     @classmethod
     def poll(cls, context: bpy.types.Context) -> bool:
@@ -343,7 +357,7 @@ class CLONERELIEF_OT_copy_message(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         context.window_manager.clipboard = context.scene.clone_relief_settings.last_message
-        self.report({"INFO"}, "Message copié dans le presse-papiers.")
+        self.report({"INFO"}, translate("Message copied to the clipboard."))
         return {"FINISHED"}
 
 
@@ -361,7 +375,7 @@ def _subdivision_plan(
 ]:
     """Validate captures and calculate a bounded target subdivision plan."""
     if _SOURCE_CAPTURE is None or _TARGET_CAPTURE is None:
-        raise ValueError("Capture source and target regions first")
+        raise ValueError(format_message("Capture source and target regions first"))
     obj, bm = active_edit_mesh(context)
     signature = topology_signature(bm)
     validate_capture(_SOURCE_CAPTURE, obj, bm, current_signature=signature)
@@ -369,7 +383,7 @@ def _subdivision_plan(
     target_faces = tuple(bm.faces[index] for index in _TARGET_CAPTURE.face_indices)
     edges = tuple(sorted({edge for face in target_faces for edge in face.edges}, key=lambda edge: edge.index))
     if not target_faces or not edges:
-        raise ValueError("Captured target has no faces or edges")
+        raise ValueError(format_message("Captured target has no faces or edges"))
     affected = {face for edge in edges for face in edge.link_faces}
     affected_faces = tuple(sorted(affected, key=lambda face: face.index))
     source_patch = _SOURCE_CAPTURE.as_patch()
@@ -406,33 +420,44 @@ class CLONERELIEF_OT_capture_source(bpy.types.Operator):
         except (ValueError, RuntimeError) as error:
             previous = _SOURCE_CAPTURE
             if previous is None:
-                source_status = f"Échec : {error}"
-                preserved = "Aucune ancienne capture source à conserver."
+                source_status = "Failed"
+                preserved = translate("No previous source capture is available.")
             else:
                 source_status = (
-                    f"Capture conservée : {len(previous.face_indices)} faces / "
-                    f"{len(previous.vertex_indices)} sommets"
+                    f"Previous source capture kept: {len(previous.face_indices)} faces / "
+                    f"{len(previous.vertex_indices)} vertices."
                 )
-                preserved = "L’ancienne source capturée est conservée."
-            message = f"Capture source refusée : {error} {preserved}"
+                preserved = translate("The previous source capture is preserved.")
+            message = format_message(
+                "Source capture failed: {detail} {preserved}",
+                detail=translate(str(error)),
+                preserved=preserved,
+            )
             _set_ui_status(context, source=source_status, message=message, level="ERROR")
-            self.report({"ERROR"}, "Capture Source refusée. Consultez le détail dans Clone Relief.")
+            self.report({"ERROR"}, translate("Capture Source failed. See the details in Clone Relief."))
             return {"CANCELLED"}
         _SOURCE_CAPTURE = capture
         _TARGET_CAPTURE = None
-        source_status = f"{len(capture.face_indices)} faces / {len(capture.vertex_indices)} sommets"
+        source_status = f"{len(capture.face_indices)} faces / {len(capture.vertex_indices)} vertices"
         component_note, message_level = _capture_component_note(capture)
         if component_note:
-            source_status += " (groupe principal)"
+            source_status += " (main group)"
         _set_ui_status(
             context,
             source=source_status,
-            target="Non capturée",
-            message=f"Source capturée : {len(capture.face_indices)} faces, "
-            f"{len(capture.vertex_indices)} sommets. Recapturez la cible.{component_note}",
+            target="Not captured",
+            message=format_message(
+                "Source captured: {faces} faces, {vertices} vertices. Recapture the target. {note}",
+                faces=len(capture.face_indices),
+                vertices=len(capture.vertex_indices),
+                note=component_note,
+            ),
             level=message_level,
         )
-        self.report({message_level}, f"{capture.object_name} : source, {source_status} capturés")
+        self.report(
+            {message_level},
+            format_message("{object}: source captured, {status}", object=capture.object_name, status=source_status),
+        )
         return {"FINISHED"}
 
 
@@ -450,9 +475,9 @@ class CLONERELIEF_OT_capture_target(bpy.types.Operator):
     def execute(self, context: bpy.types.Context) -> set[str]:
         global _TARGET_CAPTURE
         if _SOURCE_CAPTURE is None:
-            message = "Capturez d’abord la source."
-            _set_ui_status(context, target="Non capturée", message=message, level="ERROR")
-            self.report({"ERROR"}, "Capture Source d’abord. Détail dans le panneau Clone Relief.")
+            message = format_message("No source captured. Select the source, then click Capture Source.")
+            _set_ui_status(context, target="Not captured", message=message, level="ERROR")
+            self.report({"ERROR"}, translate("Capture the source first. Details are in the Clone Relief panel."))
             return {"CANCELLED"}
         try:
             _reject_through_selection(context)
@@ -464,37 +489,45 @@ class CLONERELIEF_OT_capture_target(bpy.types.Operator):
             obj, bm = active_edit_mesh(context)
             validate_capture(_SOURCE_CAPTURE, obj, bm, current_signature=capture.topology_signature)
             if set(capture.face_indices).intersection(_SOURCE_CAPTURE.face_indices):
-                raise ValueError("Source et cible se chevauchent; sélectionnez des faces distinctes.")
+                raise ValueError(format_message("Source and target overlap; select distinct faces."))
         except (ValueError, RuntimeError) as error:
             previous = _TARGET_CAPTURE
             if previous is None:
-                target_status = f"Échec : {error}"
-                preserved = "Aucune ancienne capture cible à conserver."
+                target_status = "Failed"
+                preserved = translate("No previous target capture is available.")
             else:
                 target_status = (
-                    f"Capture conservée : {len(previous.face_indices)} faces / "
-                    f"{len(previous.vertex_indices)} sommets"
+                    f"Previous target capture kept: {len(previous.face_indices)} faces / "
+                    f"{len(previous.vertex_indices)} vertices."
                 )
-                preserved = "L’ancienne cible capturée est conservée."
-            message = f"Capture cible refusée : {error} {preserved}"
+                preserved = translate("The previous target capture is preserved.")
+            message = format_message(
+                "Target capture failed: {detail} {preserved}",
+                detail=translate(str(error)),
+                preserved=preserved,
+            )
             _set_ui_status(context, target=target_status, message=message, level="ERROR")
-            self.report({"ERROR"}, "Capture Target refusée. Consultez le détail dans Clone Relief.")
+            self.report({"ERROR"}, translate("Capture Target failed. See the details in Clone Relief."))
             return {"CANCELLED"}
         _TARGET_CAPTURE = capture
-        target_status = f"{len(capture.face_indices)} faces / {len(capture.vertex_indices)} sommets"
+        target_status = f"{len(capture.face_indices)} faces / {len(capture.vertex_indices)} vertices"
         component_note, message_level = _capture_component_note(capture)
         if component_note:
-            target_status += " (groupe principal)"
+            target_status += " (main group)"
         _set_ui_status(
             context,
             target=target_status,
-            message=f"Cible capturée : {len(capture.face_indices)} faces, "
-            f"{len(capture.vertex_indices)} sommets.{component_note}",
+            message=format_message(
+                "Target captured: {faces} faces, {vertices} vertices. {note}",
+                faces=len(capture.face_indices),
+                vertices=len(capture.vertex_indices),
+                note=component_note,
+            ),
             level=message_level,
         )
         self.report(
             {message_level},
-            "Cible capturée. Consultez les comptes dans le panneau Clone Relief.",
+            translate("Target captured. See counts in the Clone Relief panel."),
         )
         return {"FINISHED"}
 
@@ -520,15 +553,19 @@ class CLONERELIEF_OT_restore_source_selection(bpy.types.Operator):
         try:
             _restore_captured_face_selection(context, _SOURCE_CAPTURE, "source")
         except (ValueError, RuntimeError) as error:
-            _set_ui_status(context, message=f"Sélection source non rétablie : {error}", level="ERROR")
-            self.report({"ERROR"}, "Sélection source non rétablie. Consultez Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Could not restore source selection: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Source selection could not be restored. See Clone Relief."))
             return {"CANCELLED"}
         _set_ui_status(
             context,
-            message="Sélection source rétablie depuis sa capture. La géométrie n’a pas été modifiée.",
+            message=translate("Source selection restored from its capture. Geometry was not changed."),
             level="INFO",
         )
-        self.report({"INFO"}, "Sélection source rétablie.")
+        self.report({"INFO"}, translate("Source selection restored."))
         return {"FINISHED"}
 
 
@@ -551,17 +588,21 @@ class CLONERELIEF_OT_restore_target_selection(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         try:
-            _restore_captured_face_selection(context, _TARGET_CAPTURE, "cible")
+            _restore_captured_face_selection(context, _TARGET_CAPTURE, "target")
         except (ValueError, RuntimeError) as error:
-            _set_ui_status(context, message=f"Sélection cible non rétablie : {error}", level="ERROR")
-            self.report({"ERROR"}, "Sélection cible non rétablie. Consultez Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Could not restore target selection: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Target selection could not be restored. See Clone Relief."))
             return {"CANCELLED"}
         _set_ui_status(
             context,
-            message="Sélection cible rétablie depuis sa capture. La géométrie n’a pas été modifiée.",
+            message=translate("Target selection restored from its capture. Geometry was not changed."),
             level="INFO",
         )
-        self.report({"INFO"}, "Sélection cible rétablie.")
+        self.report({"INFO"}, translate("Target selection restored."))
         return {"FINISHED"}
 
 
@@ -583,7 +624,7 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
         description="Keep the relief above the target or preserve positive and negative source details",
         items=(
             ("OUTWARD", "Unidirectionnel (+ normale)", "Only displace outward along target normals"),
-            ("BIDIRECTIONAL", "Bidirectionnel (± normale)", "Keep positive and negative source deviations"),
+            ("BIDIRECTIONAL", "Bidirectional (± normal)", "Keep positive and negative source deviations"),
         ),
         default="OUTWARD",
     )
@@ -604,9 +645,9 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
                 direction=self.direction,
             )
         except (ValueError, RuntimeError, ArithmeticError) as error:
-            message = f"Relief non appliqué : {error}"
+            message = format_message("Relief was not applied: {detail}", detail=translate(str(error)))
             _set_ui_status(context, message=message, level="ERROR")
-            self.report({"ERROR"}, "Apply Relief refusé. Consultez le détail dans Clone Relief.")
+            self.report({"ERROR"}, translate("Apply Relief failed. See the details in Clone Relief."))
             return {"CANCELLED"}
 
         write_world_coordinates(obj, bm, target_capture.vertex_indices, updated)
@@ -614,36 +655,48 @@ class CLONERELIEF_OT_apply(bpy.types.Operator):
         warning_threshold = _visibility_threshold(context)
         if moved == 0:
             message = (
-                "Aucun relief produit. La cible a été rétablie depuis sa géométrie capturée; "
-                "la capture reste active pour ajuster les paramètres et réessayer."
+                format_message(
+                    "No relief was produced. The target was restored from its captured geometry; "
+                    "the capture remains active so you can adjust settings and try again."
+                )
             )
             level, report_level = "WARNING", "WARNING"
         elif maximum < warning_threshold:
             message = (
-                f"Relief appliqué depuis la géométrie cible capturée, mais très faible : "
-                f"{moved}/{len(target_capture.vertex_indices)} "
-                f"sommets; déplacement max. {magnitude}; mode {_direction_label(self.direction)}. "
-                "Ajustez les paramètres et réappliquez; le résultat repartira de la même géométrie capturée."
+                format_message(
+                    "Relief applied from the captured target geometry, but it is very subtle: "
+                    "{moved}/{total} vertices; max displacement {magnitude}; mode {direction}. "
+                    "Adjust the settings and apply again; the same captured geometry will be used.",
+                    moved=moved,
+                    total=len(target_capture.vertex_indices),
+                    magnitude=magnitude,
+                    direction=_direction_label(self.direction),
+                )
             )
             level, report_level = "WARNING", "WARNING"
         else:
             message = (
-                f"Réussite : relief recalculé depuis la cible capturée sur "
-                f"{moved}/{len(target_capture.vertex_indices)} sommets; déplacement max. {magnitude}; "
-                f"mode {_direction_label(self.direction)}. Changez les paramètres puis réappliquez, "
-                "ou recapturez une autre cible. Annuler avec Undo."
+                format_message(
+                    "Success: relief recalculated from the captured target on {moved}/{total} vertices; "
+                    "max displacement {magnitude}; mode {direction}. Change settings and apply again, "
+                    "or capture another target. Undo reverses the operation.",
+                    moved=moved,
+                    total=len(target_capture.vertex_indices),
+                    magnitude=magnitude,
+                    direction=_direction_label(self.direction),
+                )
             )
             level, report_level = "INFO", "INFO"
         _set_ui_status(
             context,
             target=(
-                f"{len(target_capture.face_indices)} faces / {len(target_capture.vertex_indices)} sommets "
-                "— référence conservée"
+                f"{len(target_capture.face_indices)} faces / "
+                f"{len(target_capture.vertex_indices)} vertices — Target baseline retained"
             ),
             message=message,
             level=level,
         )
-        self.report({report_level}, "Apply Relief terminé. Consultez le résultat détaillé dans Clone Relief.")
+        self.report({report_level}, translate("Apply Relief complete. See the detailed result in Clone Relief."))
         return {"FINISHED"}
 
 
@@ -727,8 +780,12 @@ class CLONERELIEF_OT_check_printability(bpy.types.Operator):
         try:
             report = _mesh_integrity_summary(obj)
         except (RuntimeError, ValueError) as error:
-            _set_ui_status(context, message=f"Contrôle topologique impossible : {error}", level="ERROR")
-            self.report({"ERROR"}, "Contrôle impossible. Consultez le panneau Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Topology check failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Topology check failed. See the Clone Relief panel."))
             return {"CANCELLED"}
 
         components = report["components"]
@@ -749,24 +806,37 @@ class CLONERELIEF_OT_check_printability(bpy.types.Operator):
         )
         level = "ERROR" if issues else "WARNING" if len(components) > 1 else "INFO"
         message = (
-            f"Contrôle topologique — {obj.name} : "
-            f"{report['vertices']:,} sommets, {report['edges']:,} arêtes, "
-            f"{report['faces']:,} faces. ".replace(",", " ")
-            + f"Composantes reliées par arêtes : {len(components)}"
-            + (f" ({component_text} faces). " if component_text else ". ")
-            + f"Bords : {report['boundary_edges']}; arêtes filaires : {report['wire_edges']}; "
-            + f"arêtes non-manifold : {report['nonmanifold_edges']}; "
-            + f"sommets non-manifold : {report['nonmanifold_vertices']}; "
-            + f"sommets isolés : {report['isolated_vertices']}; "
-            + f"faces dégénérées : {report['degenerate_faces']}. "
-            + "Les auto-intersections et surfaces internes ne sont pas contrôlées."
+            format_message(
+                "Topology check — {object}: {vertices} vertices, {edges} edges, {faces} faces.",
+                object=obj.name,
+                vertices=f"{report['vertices']:,}".replace(",", " "),
+                edges=f"{report['edges']:,}".replace(",", " "),
+                faces=f"{report['faces']:,}".replace(",", " "),
+            )
+            + format_message(
+                "Edge-connected components: {count} ({sizes} faces)." if component_text else "Edge-connected components: {count}.",
+                count=len(components),
+                sizes=component_text,
+            )
+            + format_message(
+                "Open edges: {boundary}; wire edges: {wire}; non-manifold edges: {nonmanifold_edges}; "
+                "non-manifold vertices: {nonmanifold_vertices}; isolated vertices: {isolated}; degenerate faces: {degenerate}.",
+                boundary=report["boundary_edges"],
+                wire=report["wire_edges"],
+                nonmanifold_edges=report["nonmanifold_edges"],
+                nonmanifold_vertices=report["nonmanifold_vertices"],
+                isolated=report["isolated_vertices"],
+                degenerate=report["degenerate_faces"],
+            )
+            + " "
+            + translate("Self-intersections and internal surfaces were not checked.")
         )
         if not issues and len(components) == 1:
-            message = "Aucun défaut topologique détecté. " + message
+            message = translate("No topology defects detected. ") + message
         elif not issues:
-            message = "Topologie des arêtes fermée; plusieurs composantes séparées à examiner. " + message
+            message = translate("The edge shell is closed; inspect the separate components. ") + message
         _set_ui_status(context, message=message, level=level)
-        self.report({level}, "Contrôle terminé. Consultez le panneau Clone Relief.")
+        self.report({level}, translate("Topology check complete. See the Clone Relief panel."))
         return {"FINISHED"}
 
 
@@ -777,7 +847,7 @@ class CLONERELIEF_OT_inspect_component(bpy.types.Operator):
     bl_label = "Locate Mesh Component"
     bl_description = "Select one disconnected component by face count and center the 3D view on it"
 
-    component: EnumProperty(name="Composante", items=_component_inspection_items)
+    component: EnumProperty(name="Component", items=_component_inspection_items)
 
     @classmethod
     def poll(cls, context: bpy.types.Context) -> bool:
@@ -789,19 +859,26 @@ class CLONERELIEF_OT_inspect_component(bpy.types.Operator):
             obj, bm = active_edit_mesh(context)
             components = _connected_face_components(bm)
             if len(components) < 2:
-                self.report({"INFO"}, "Aucune composante séparée à localiser.")
+                self.report({"INFO"}, translate("No separate components to locate."))
                 return {"CANCELLED"}
             signature = topology_signature(bm)
         except (ValueError, RuntimeError) as error:
-            self.report({"ERROR"}, f"Localisation impossible : {error}")
+            self.report({"ERROR"}, format_message("Could not locate component: {detail}", detail=translate(str(error))))
             return {"CANCELLED"}
 
         _COMPONENT_INSPECTION_CACHE = (obj.as_pointer(), signature, components)
         _COMPONENT_INSPECTION_ITEMS[:] = [
             (
                 str(index),
-                f"Composante {index + 1} — {len(face_indices):,} faces".replace(",", " "),
-                f"Sélectionner et cadrer {len(face_indices):,} faces reliées par des arêtes".replace(",", " "),
+                format_message(
+                    "Component {index} — {faces} faces",
+                    index=index + 1,
+                    faces=f"{len(face_indices):,}".replace(",", " "),
+                ),
+                format_message(
+                    "Select and frame {faces} edge-connected faces",
+                    faces=f"{len(face_indices):,}".replace(",", " "),
+                ),
             )
             for index, face_indices in enumerate(components)
         ]
@@ -810,23 +887,23 @@ class CLONERELIEF_OT_inspect_component(bpy.types.Operator):
 
     def draw(self, _context: bpy.types.Context) -> None:
         layout = self.layout
-        layout.label(text="Choisis une composante; la vue sera cadrée sur sa sélection.")
+        layout.label(text=translate("Choose a component; the view will frame the selection."))
         layout.prop(self, "component", text="")
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         cache = _COMPONENT_INSPECTION_CACHE
         if cache is None:
-            self.report({"ERROR"}, "Relance la localisation des composantes.")
+            self.report({"ERROR"}, translate("Run component location again."))
             return {"CANCELLED"}
         try:
             obj, bm = active_edit_mesh(context)
             if obj.as_pointer() != cache[0] or topology_signature(bm) != cache[1]:
-                raise ValueError("L’objet ou sa topologie a changé; relance le contrôle.")
+                raise ValueError(format_message("The object or its topology changed; run the topology check again."))
             component_index = int(self.component)
             face_indices = cache[2][component_index]
             _select_face_indices(context, obj, bm, face_indices)
         except (IndexError, ValueError, RuntimeError) as error:
-            self.report({"ERROR"}, f"Composante non sélectionnée : {error}")
+            self.report({"ERROR"}, format_message("Could not select component: {detail}", detail=translate(str(error))))
             return {"CANCELLED"}
 
         framed = False
@@ -846,13 +923,20 @@ class CLONERELIEF_OT_inspect_component(bpy.types.Operator):
 
         count = len(face_indices)
         message = (
-            f"Composante {component_index + 1}/{len(cache[2])} sélectionnée : {count:,} faces. "
-            .replace(",", " ")
-            + ("Vue cadrée sur la composante. " if framed else "Sélection faite; centre la vue sur elle si nécessaire. ")
-            + "Aucune géométrie n’a été modifiée."
+            format_message(
+                "Component {index}/{total} selected: {faces} faces. ",
+                index=component_index + 1,
+                total=len(cache[2]),
+                faces=f"{count:,}".replace(",", " "),
+            )
+            + translate("The view is framed on the component. " if framed else "Selection made; frame it if needed. ")
+            + translate("No geometry was changed.")
         )
         _set_ui_status(context, message=message, level="INFO")
-        self.report({"INFO"}, f"Composante sélectionnée : {count:,} faces.".replace(",", " "))
+        self.report(
+            {"INFO"},
+            format_message("Component selected: {faces} faces.", faces=f"{count:,}".replace(",", " ")),
+        )
         return {"FINISHED"}
 
 
@@ -898,21 +982,25 @@ class CLONERELIEF_OT_compare_target(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         if _TARGET_CAPTURE is None:
-            self.report({"ERROR"}, "Capture Target before creating a comparison.")
+            self.report({"ERROR"}, translate("Capture Target before creating a comparison."))
             return {"CANCELLED"}
         try:
             obj, bm = active_edit_mesh(context)
             validate_capture(_TARGET_CAPTURE, obj, bm)
         except (ValueError, RuntimeError) as error:
-            _set_ui_status(context, message=f"Comparaison impossible : {error}", level="ERROR")
-            self.report({"ERROR"}, "Comparaison impossible. Consultez le panneau Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Comparison failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Comparison failed. See the Clone Relief panel."))
             return {"CANCELLED"}
 
         if bpy.data.collections.get(_COMPARISON_COLLECTION_NAME) is not None:
             _remove_comparison(context)
             _set_ui_status(
                 context,
-                message="Comparaison précédente effacée. Relancez la commande pour la recréer.",
+                message=translate("The previous comparison was cleared. Run the command again to recreate it."),
                 level="INFO",
             )
             return {"FINISHED"}
@@ -932,10 +1020,10 @@ class CLONERELIEF_OT_compare_target(bpy.types.Operator):
         if moved == 0:
             _set_ui_status(
                 context,
-                message="La cible correspond encore à sa référence; appliquez un relief avant de comparer.",
+                message=translate("The target still matches its captured baseline; apply relief before comparing."),
                 level="WARNING",
             )
-            self.report({"WARNING"}, "Aucun changement à comparer.")
+            self.report({"WARNING"}, translate("No changes to compare."))
             return {"CANCELLED"}
 
         bpy.ops.object.mode_set(mode="OBJECT")
@@ -977,14 +1065,17 @@ class CLONERELIEF_OT_compare_target(bpy.types.Operator):
             bpy.data.objects[name].select_set(True)
         context.view_layer.objects.active = bpy.data.objects["After - current target"]
         magnitude = _format_displacement(context, max(differences, default=0.0))
-        message = (
-            f"Comparaison créée dans l’Outliner : Before - captured target et After - current target. "
-            f"{moved}/{len(capture.vertex_indices)} sommets diffèrent; écart max. {magnitude}. "
-            "Ces surfaces temporaires sont ouvertes et réservées à l’inspection; elles ne sont pas imprimables. "
-            "Cliquez de nouveau sur la commande pour les effacer et revenir au maillage de travail."
+        message = format_message(
+            "Comparison created in the Outliner: Before - captured target and After - current target. "
+            "{moved}/{total} vertices differ; max difference {magnitude}. These temporary surfaces are open "
+            "and for inspection only; they are not printable. Run this command again to remove them and "
+            "return to the working mesh.",
+            moved=moved,
+            total=len(capture.vertex_indices),
+            magnitude=magnitude,
         )
         _set_ui_status(context, message=message, level="INFO")
-        self.report({"INFO"}, "Comparaison avant/après créée; détail dans Clone Relief.")
+        self.report({"INFO"}, translate("Before-and-after comparison created. See Clone Relief for details."))
         return {"FINISHED"}
 
 
@@ -997,9 +1088,9 @@ class CLONERELIEF_OT_clear_comparison(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         if not _remove_comparison(context):
-            self.report({"INFO"}, "Aucune comparaison temporaire à effacer.")
+            self.report({"INFO"}, translate("No temporary comparison to clear."))
             return {"CANCELLED"}
-        _set_ui_status(context, message="Comparaison effacée; maillage de travail restauré.", level="INFO")
+        _set_ui_status(context, message=translate("Comparison cleared; working mesh restored."), level="INFO")
         return {"FINISHED"}
 
 
@@ -1030,7 +1121,7 @@ class CLONERELIEF_OT_export_stl(bpy.types.Operator):
     def execute(self, context: bpy.types.Context) -> set[str]:
         obj = context.view_layer.objects.active
         if obj is None or obj.type != "MESH" or obj.get("clone_relief_comparison", False):
-            self.report({"ERROR"}, "Sélectionnez le maillage de travail, pas une surface de comparaison.")
+            self.report({"ERROR"}, translate("Select the working mesh, not a comparison surface."))
             return {"CANCELLED"}
         previous_mode = obj.mode
         previous_active = context.view_layer.objects.active
@@ -1056,10 +1147,14 @@ class CLONERELIEF_OT_export_stl(bpy.types.Operator):
                 apply_modifiers=True,
             )
             if "FINISHED" not in result:
-                raise RuntimeError("L’exporteur STL n’a pas terminé l’export.")
+                raise RuntimeError(format_message("The STL exporter did not finish the export."))
         except (RuntimeError, OSError) as error:
-            _set_ui_status(context, message=f"Export STL échoué : {error}", level="ERROR")
-            self.report({"ERROR"}, "Export STL échoué. Consultez le panneau Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("STL export failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("STL export failed. See the Clone Relief panel."))
             return {"CANCELLED"}
         finally:
             if obj.mode != "OBJECT":
@@ -1076,9 +1171,9 @@ class CLONERELIEF_OT_export_stl(bpy.types.Operator):
                     bpy.ops.object.mode_set(mode=previous_mode)
                 except RuntimeError:
                     pass
-        message = f"Export STL terminé en millimètres : {self.filepath}"
+        message = format_message("STL export completed in millimeters: {path}", path=self.filepath)
         _set_ui_status(context, message=message, level="INFO")
-        self.report({"INFO"}, "Export STL terminé. Vérifiez les dimensions dans votre trancheur.")
+        self.report({"INFO"}, translate("STL export complete. Check the dimensions in your slicer."))
         return {"FINISHED"}
 
 
@@ -1097,26 +1192,39 @@ class CLONERELIEF_OT_diagnose_resolution(bpy.types.Operator):
         try:
             _obj, _bm, _faces, _edges, _affected, resolution, _estimate = _subdivision_plan(context, 1)
         except (ValueError, RuntimeError, ArithmeticError) as error:
-            _set_ui_status(context, message=f"Diagnostic impossible : {error}", level="ERROR")
-            self.report({"ERROR"}, "Diagnostic impossible. Consultez le détail dans Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Resolution diagnostic failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Resolution diagnostic failed. See Clone Relief for details."))
             return {"CANCELLED"}
         ratio = resolution.p90_ratio
         source_edge = _format_displacement(context, resolution.source_median_edge)
         target_edge = _format_displacement(context, resolution.target_p90_edge)
         if resolution.needs_subdivision:
             message = (
-                f"Cible trop grossière : arête cible P90 {target_edge}, contre "
-                f"{source_edge} côté source ({ratio:.2f}×). Subdivision locale conseillée : "
-                f"{resolution.recommended_cuts} coupe(s)."
+                format_message(
+                    "Target is too coarse: target P90 edge {target}, source {source} ({ratio}×). "
+                    "Suggested local subdivision: {cuts} cut(s).",
+                    target=target_edge,
+                    source=source_edge,
+                    ratio=f"{ratio:.2f}",
+                    cuts=resolution.recommended_cuts,
+                )
             )
             level, report_level = "WARNING", "WARNING"
         else:
             message = (
-                f"Résolution cible suffisante : arête P90 {target_edge}, contre "
-                f"{source_edge} côté source ({ratio:.2f}×)."
+                format_message(
+                    "Target resolution is sufficient: target P90 edge {target}, source {source} ({ratio}×).",
+                    target=target_edge,
+                    source=source_edge,
+                    ratio=f"{ratio:.2f}",
+                )
             )
             level, report_level = "INFO", "INFO"
-        self.report({report_level}, "Diagnostic terminé. Consultez le détail dans Clone Relief.")
+        self.report({report_level}, translate("Resolution diagnostic complete. See Clone Relief for details."))
         _set_ui_status(context, message=message, level=level)
         return {"FINISHED"}
 
@@ -1125,8 +1233,8 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
     """Show a cost estimate, then explicitly subdivide the captured target."""
 
     bl_idname = "clone_relief.subdivide_target"
-    bl_label = "Densifier la cible capturée"
-    bl_description = "Ajouter localement des faces à la cible après vérification de l’estimation"
+    bl_label = "Subdivide the Captured Target"
+    bl_description = "Add faces locally to the target after checking the estimate"
     bl_options = {"REGISTER", "UNDO"}
 
     cuts: IntProperty(name="Cuts per Edge", default=1, min=1, max=8)
@@ -1140,8 +1248,12 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
         try:
             plan = _subdivision_plan(context, self.cuts)
         except (ValueError, RuntimeError, ArithmeticError) as error:
-            _set_ui_status(context, message=f"Subdivision annulée : {error}", level="ERROR")
-            self.report({"ERROR"}, "Subdivision refusée. Consultez le détail dans Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Subdivision failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Subdivision failed. See Clone Relief for details."))
             return {"CANCELLED"}
         resolution = plan[5]
         self._resolution = resolution
@@ -1157,7 +1269,7 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
         current_face_count = getattr(self, "_current_face_count", None)
         affected_face_sides = getattr(self, "_affected_face_sides", None)
         if resolution is None or current_face_count is None or affected_face_sides is None:
-            layout.label(text="Capture source and target, then reopen this dialog", icon="ERROR")
+            layout.label(text=translate("Capture source and target, then reopen this dialog"), icon="ERROR")
             return
         estimated_faces = estimate_face_count_upper_bound(
             current_face_count,
@@ -1165,16 +1277,39 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
             self.cuts,
         )
         added = max(0, estimated_faces - current_face_count)
-        layout.label(text=f"Source median edge: {resolution.source_median_edge:.6g} scene units")
-        layout.label(text=f"Target P90 edge: {resolution.target_p90_edge:.6g} ({resolution.p90_ratio:.2f}x source)")
-        layout.label(text=f"Selected target: {len(_TARGET_CAPTURE.face_indices)} faces on {_TARGET_CAPTURE.object_name}")
-        layout.prop(self, "cuts")
-        layout.prop(self, "max_added_faces")
-        layout.label(text=f"Estimated upper bound: {estimated_faces:,} total faces (+{added:,})")
+        layout.label(
+            text=format_message(
+                "Source median edge: {value} scene units",
+                value=f"{resolution.source_median_edge:.6g}",
+            )
+        )
+        layout.label(
+            text=format_message(
+                "Target P90 edge: {value} ({ratio}x source)",
+                value=f"{resolution.target_p90_edge:.6g}",
+                ratio=f"{resolution.p90_ratio:.2f}",
+            )
+        )
+        layout.label(
+            text=format_message(
+                "Selected target: {faces} faces on {object}",
+                faces=len(_TARGET_CAPTURE.face_indices),
+                object=_TARGET_CAPTURE.object_name,
+            )
+        )
+        layout.prop(self, "cuts", text=translate("Cuts per Edge"))
+        layout.prop(self, "max_added_faces", text=translate("Maximum Added Faces"))
+        layout.label(
+            text=format_message(
+                "Estimated upper bound: {faces} total faces (+{added})",
+                faces=f"{estimated_faces:,}",
+                added=f"{added:,}",
+            )
+        )
         if added > self.max_added_faces:
-            layout.label(text="Estimate exceeds the added-face limit", icon="ERROR")
+            layout.label(text=translate("Estimate exceeds the added-face limit"), icon="ERROR")
         elif not resolution.needs_subdivision:
-            layout.label(text="Target is already near source spacing", icon="INFO")
+            layout.label(text=translate("Target is already near source spacing"), icon="INFO")
 
     def execute(self, context: bpy.types.Context) -> set[str]:
         global _SOURCE_CAPTURE, _TARGET_CAPTURE
@@ -1186,8 +1321,11 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
             added_estimate = max(0, estimated_faces - len(bm.faces))
             if added_estimate > self.max_added_faces:
                 raise ValueError(
-                    f"Conservative estimate adds {added_estimate:,} faces; "
-                    f"limit is {self.max_added_faces:,}"
+                    format_message(
+                        "Conservative estimate adds {added} faces; limit is {limit}",
+                        added=f"{added_estimate:,}",
+                        limit=f"{self.max_added_faces:,}",
+                    )
                 )
             before_faces = len(bm.faces)
             subdivision_result = bmesh.ops.subdivide_edges(
@@ -1204,8 +1342,12 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
             bm.faces.ensure_lookup_table()
             bmesh.update_edit_mesh(obj.data, loop_triangles=True, destructive=True)
         except (ValueError, RuntimeError, ArithmeticError) as error:
-            _set_ui_status(context, message=f"Subdivision refusée : {error}", level="ERROR")
-            self.report({"ERROR"}, "Subdivision refusée. Consultez le détail dans Clone Relief.")
+            _set_ui_status(
+                context,
+                message=format_message("Subdivision failed: {detail}", detail=translate(str(error))),
+                level="ERROR",
+            )
+            self.report({"ERROR"}, translate("Subdivision failed. See Clone Relief for details."))
             return {"CANCELLED"}
 
         _SOURCE_CAPTURE = None
@@ -1215,10 +1357,16 @@ class CLONERELIEF_OT_subdivide_target(bpy.types.Operator):
             context,
             source="Recapture after subdivision",
             target="Recapture after subdivision",
-            message=f"Subdivision réussie : {actual_added} faces ajoutées. Recapturez source et cible.",
+            message=format_message(
+                "Subdivision succeeded: {added} faces added. Recapture source and target.",
+                added=actual_added,
+            ),
             level="WARNING",
         )
-        self.report({"INFO"}, "Subdivision terminée. Recapturez source et cible; détail dans Clone Relief.")
+        self.report(
+            {"INFO"},
+            translate("Subdivision complete. Recapture source and target; see Clone Relief for details."),
+        )
         return {"FINISHED"}
 
 

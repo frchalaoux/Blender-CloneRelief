@@ -98,6 +98,7 @@ Les plages autorisées devront être bornées et documentées. Le plafonnement �
 - **F-21 — Opacité de sélection :** proposer dans le panneau un réglage de l’alpha du remplissage orange des faces sélectionnées. Le réglage agit sur le thème de la vue 3D tant que l’add-on est actif et restaure les valeurs initiales du thème à sa désactivation.
 - **F-22 — Rétablir une capture :** permettre de resélectionner les faces source ou cible mémorisées après une désélection, sans recapture ni changement géométrique. N’activer l’action qu’en Edit Mode sur le même objet et tant que sa topologie correspond à la capture; invalider l’action si la topologie change. Les captures restent en mémoire pour la session uniquement.
 - **F-23 — Localiser une composante :** après l’audit, permettre de choisir une composante par son rang et son nombre de faces, sélectionner ses faces en Edit Mode et cadrer la vue dessus sans modifier la géométrie. Refuser une sélection basée sur une topologie qui a changé depuis le calcul des composantes.
+- **F-24 — Localisation de l’interface :** centraliser les textes visibles dans un catalogue anglais/français. Suivre la langue d’interface de Blender quand les traductions d’interface sont activées; utiliser l’anglais pour les autres langues. Les changements de langue doivent aussi s’appliquer aux statuts dynamiques déjà affichés.
 
 #### Décision de départ pour M3
 

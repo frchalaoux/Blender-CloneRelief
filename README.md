@@ -8,9 +8,9 @@ Clone Relief is an experimental Blender add-on that transfers surface relief
 from a source region to a target region on the same mesh. It modifies geometry
 and lets you tune the transfer before applying it.
 
-**Version:** 0.1.0 · **Target Blender version:** 4.5.8 LTS · **Reference platform:** Intel macOS
+**Version:** 0.2.0 · **Target Blender version:** 4.5.8 LTS · **Reference platform:** Intel macOS
 
-**Versions and tags:** [Latest release: v0.1.0 (prototype)](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.1.0) · [Browse all GitHub tags](https://github.com/frchalaoux/Blender-CloneRelief/tags). No development release is published yet.
+**Versions and tags:** [Latest release: v0.2.0 (prototype)](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.2.0) · [Browse all GitHub tags](https://github.com/frchalaoux/Blender-CloneRelief/tags). No development release is published yet.
 
 > Clone Relief is a prototype. It has not been qualified to guarantee that a
 > mesh is printable.
@@ -26,10 +26,15 @@ and lets you tune the transfer before applying it.
 
 ## Compatibility and status
 
-Clone Relief targets Blender **4.5.8 LTS**. Version 0.1.0 provides source and
+Clone Relief targets Blender **4.5.8 LTS**. Version 0.2.0 provides source and
 target capture, preview, undoable application, and re-application from the
 captured target. The topology check and disconnected-component locator have
-also been used on a scan.
+also been used on a scan. Version 0.2.0 adds a French/English interface that
+follows Blender's selected interface language.
+
+The add-on interface follows Blender's selected language in English and
+French. For French, enable **Interface** under **Preferences → Interface →
+Translation**. Other Blender languages fall back to English.
 
 The before/after comparison and STL export workflow still need end-to-end
 validation. M6 uses the 3D Print Toolbox for Blender-side manufacturability
@@ -40,7 +45,7 @@ See the [qualification protocol](documentation/PRINT_QUALIFICATION.en.md).
 
 ### Install the published release (recommended)
 
-Download the ready-to-install [Clone Relief 0.1.0 ZIP](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Keep it as a ZIP; do not extract it. For this route, you do not need to install or run Python separately, and you do not need a copy of the source repository. Blender runs the add-on with the Python interpreter bundled inside Blender; that is separate from the `python3.11` Terminal command shown below.
+Download the ready-to-install [Clone Relief 0.2.0 ZIP](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.2.0/blender_clone_relief_0.2.0.zip). Keep it as a ZIP; do not extract it. For this route, you do not need to install or run Python separately, and you do not need a copy of the source repository. Blender runs the add-on with the Python interpreter bundled inside Blender; that is separate from the `python3.11` Terminal command shown below.
 
 In Blender 4.5.8:
 
@@ -57,7 +62,7 @@ Skip this section if you only want to install the published release. This build 
 python3.11 scripts/build_addon_zip.py
 ```
 
-This creates `dist/blender_clone_relief_0.1.0.zip`; it does **not** install the add-on. To use that locally built archive, follow the Blender steps above and select the ZIP in `dist/` instead of the downloaded release file.
+This creates `dist/blender_clone_relief_0.2.0.zip`; it does **not** install the add-on. To use that locally built archive, follow the Blender steps above and select the ZIP in `dist/` instead of the downloaded release file.
 
 The add-on contains no platform-specific native libraries and is expected to
 work on platforms supported by Blender 4.5.8. It has only been tested on Intel

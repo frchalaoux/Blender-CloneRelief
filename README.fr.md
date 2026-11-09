@@ -8,9 +8,9 @@ Clone Relief est un add-on Blender expérimental qui transfère le relief d’un
 zone source vers une zone cible du même maillage. Il agit sur la géométrie et
 permet de régler le transfert avant de l’appliquer.
 
-**Version :** 0.1.0 · **Blender cible :** 4.5.8 LTS · **Plateforme de référence :** macOS Intel
+**Version :** 0.2.0 · **Blender cible :** 4.5.8 LTS · **Plateforme de référence :** macOS Intel
 
-**Versions et tags :** [Version publiée : v0.1.0 (prototype)](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.1.0) · [liste complète des tags GitHub](https://github.com/frchalaoux/Blender-CloneRelief/tags). Aucune version de développement n’est publiée pour le moment.
+**Versions et tags :** [Version publiée : v0.2.0 (prototype)](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.2.0) · [liste complète des tags GitHub](https://github.com/frchalaoux/Blender-CloneRelief/tags). Aucune version de développement n’est publiée pour le moment.
 
 > Clone Relief est un prototype. Il n’est pas encore qualifié pour garantir
 > qu’un maillage soit imprimable.
@@ -26,10 +26,16 @@ permet de régler le transfert avant de l’appliquer.
 
 ## Compatibilité et état
 
-Clone Relief vise Blender **4.5.8 LTS**. La version 0.1.0 fournit la capture
+Clone Relief vise Blender **4.5.8 LTS**. La version 0.2.0 fournit la capture
 d’une zone source et d’une cible, l’aperçu, l’application annulable et la
 réapplication depuis la cible capturée. Le contrôle topologique et la
 localisation de composantes déconnectées ont aussi été utilisés sur un scan.
+La version 0.2.0 ajoute une interface française/anglaise qui suit la langue
+d’interface sélectionnée dans Blender.
+
+L’interface de l’add-on suit la langue choisie dans Blender en français ou en
+anglais. Pour le français, active **Interface** dans **Preferences → Interface
+→ Translation**. Les autres langues de Blender affichent les textes anglais.
 
 La comparaison avant/après et le parcours d’export STL restent à valider de
 bout en bout. M6 s’appuie sur le 3D Print Toolbox pour les contrôles de
@@ -40,7 +46,7 @@ impression représentative. Voir le [protocole de qualification](documentation/P
 
 ### Installer la Release publiée (recommandé)
 
-Télécharge l’[archive ZIP prête à installer Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Garde-la au format ZIP, sans la décompresser. Pour ce parcours, tu n’as pas besoin d’installer ni de lancer Python séparément, et tu n’as pas besoin d’une copie du dépôt source. Blender exécute l’add-on avec le Python intégré à Blender; il est distinct de la commande `python3.11` du Terminal présentée plus bas.
+Télécharge l’[archive ZIP prête à installer Clone Relief 0.2.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.2.0/blender_clone_relief_0.2.0.zip). Garde-la au format ZIP, sans la décompresser. Pour ce parcours, tu n’as pas besoin d’installer ni de lancer Python séparément, et tu n’as pas besoin d’une copie du dépôt source. Blender exécute l’add-on avec le Python intégré à Blender; il est distinct de la commande `python3.11` du Terminal présentée plus bas.
 
 Dans Blender 4.5.8 :
 
@@ -57,7 +63,7 @@ Ignore cette section si tu veux seulement installer la Release publiée. Ce parc
 python3.11 scripts/build_addon_zip.py
 ```
 
-Cela crée `dist/blender_clone_relief_0.1.0.zip`; la commande **n’installe pas** l’add-on dans Blender. Pour utiliser cette archive construite localement, suis ensuite les étapes Blender ci-dessus et sélectionne le ZIP dans `dist/` au lieu du fichier téléchargé depuis la Release.
+Cela crée `dist/blender_clone_relief_0.2.0.zip`; la commande **n’installe pas** l’add-on dans Blender. Pour utiliser cette archive construite localement, suis ensuite les étapes Blender ci-dessus et sélectionne le ZIP dans `dist/` au lieu du fichier téléchargé depuis la Release.
 
 L’add-on ne contient aucune bibliothèque native dépendante d’un système et
 est censé fonctionner sur les plateformes prises en charge par Blender 4.5.8.

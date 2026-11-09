@@ -2,19 +2,21 @@
 
 [English](USER_GUIDE.en.md) · [Français](USER_GUIDE.md)
 
-**Prototype:** version 0.1.0 for Blender 4.5.8 LTS. The M5 check has been
+**Prototype:** version 0.2.0 for Blender 4.5.8 LTS. The M5 check has been
 used on a Pika scan, but the relief transfer has not yet been validated on it,
 and the add-on is not qualified for 3D printing.
 
-**Interface note:** some panel headings and commands are currently displayed
-in French. Where needed below, the exact French label appears first, followed
-by its English translation in parentheses.
+**Language:** The add-on interface follows Blender's selected language in
+English and French. To show French, enable **Interface** under **Edit →
+Preferences → Interface → Translation**. Other Blender languages fall back to
+English. Version 0.2.0 localizes the panel, buttons, dialogs, tooltips, and
+reports. Screenshots in this guide may show the French interface.
 
 ## Installation on macOS
 
 ### Install the published release (recommended)
 
-1. Download the [Clone Relief 0.1.0 ZIP archive](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Do not extract it.
+1. Download the [Clone Relief 0.2.0 ZIP archive](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.2.0/blender_clone_relief_0.2.0.zip). Do not extract it.
 2. In Blender 4.5.8, open **Blender → Preferences**, then **Get Extensions**.
 3. From the menu at the top right, choose **Install from Disk…** and select the downloaded ZIP.
 4. In Preferences, search for **Clone Relief** and enable the add-on.
@@ -30,7 +32,7 @@ Skip this section if you only want to install the published release. It is for d
 python3.11 scripts/build_addon_zip.py
 ```
 
-This creates `dist/blender_clone_relief_0.1.0.zip`, but it does **not** install the add-on. To use the locally built ZIP, follow the Blender steps above and select the file in `dist/`.
+This creates `dist/blender_clone_relief_0.2.0.zip`, but it does **not** install the add-on. To use the locally built ZIP, follow the Blender steps above and select the file in `dist/`.
 
 When the add-on is enabled and a Blender file is opened, the view is prepared
 in **Solid** shading, with **X-Ray disabled** and face selection enabled.
@@ -70,8 +72,7 @@ object:
    You can change settings and preview as often as needed; every calculation
    starts from the geometry stored by **Capture Target**.
 4. If the panel reports that the target is too coarse, run
-   **Diagnostiquer la résolution** (*Diagnose Resolution*), then
-   **Densifier la cible…** (*Subdivide Target…*) and check the estimated
+   **Diagnose Resolution**, then **Subdivide Target…** and check the estimated
    face count before confirming. Densifying adds vertices and faces to the
    target region so that it can represent finer detail. Subdivision invalidates
    captures: capture the source and target again, then preview again.
@@ -117,12 +118,12 @@ before continuing.
 
 | Setting | Default | Effect |
 |---|---:|---|
-| Opacité de sélection (*Selection Opacity*) | 0.08 (8%) | Reduces the orange fill on selected faces so the mesh is easier to see. Affects the 3D View selection color while the add-on is enabled; the original theme value is restored when disabled. |
+| Selection Opacity | 0.08 (8%) | Reduces the orange fill on selected faces so the mesh is easier to see. Affects the 3D View selection color while the add-on is enabled; the original theme value is restored when disabled. |
 | Intensity | 1.00 | Copies the complete profile; a lower value reduces its amplitude. |
 | Relief Gain | 1.0× | Multiplies transferred amplitude; values above 1 exaggerate relief. Adjustable up to 100×. |
 | Pattern Scale | 1.00 | Physical scale of the pattern; 2.00 doubles its wavelength. |
 | Edge Falloff | 0.25 | Relative width of the falloff from the target boundary. |
-| Mode de transfert (*Transfer Mode*) | Unidirectional | Copies the source profile and shifts it outward just enough to keep it above the target. Bidirectional mode preserves signed offsets around the mean plane. |
+| Transfer Mode | Unidirectional | Copies the source profile and shifts it outward just enough to keep it above the target. Bidirectional mode preserves signed offsets around the mean plane. |
 | Maximum Displacement | 0 | No limit; a positive value caps displacement in scene units. |
 
 **Preview Effect** calculates the result without changing mesh coordinates.
@@ -135,7 +136,7 @@ boundary; reduce its width to narrow this transition.
 Messages distinguish success, low amplitude, no moved vertices, and capture
 or topology errors. They appear line by line in a scrollable area just below
 **Preview Effect** and **Apply Relief**; each line can be selected, and
-**Copier le message** (*Copy Message*) copies the complete text. A successful result reports the
+**Copy Full Message** copies the complete text. A successful result reports the
 number of changed vertices and maximum displacement. A result below 0.05 mm is
 flagged as very small; this is a visual reference, not a printability
 guarantee.
@@ -148,7 +149,7 @@ flags a potentially coarse target and suggests a number of cuts. This
 threshold is indicative; it does not guarantee that the transferred pattern
 will be sampled correctly.
 
-**Densifier la cible…** (*Subdivide Target…*) opens a confirmation dialog showing the number of cuts,
+**Subdivide Target…** opens a confirmation dialog showing the number of cuts,
 a cautious face-count estimate, and the added-face ceiling (250,000 by
 default). Check the estimate before confirming. Subdivision preserves boundary
 positions and may also subdivide neighboring faces that share target edges.
@@ -156,8 +157,7 @@ Recapture the source and target afterwards.
 
 ## M5: topology check, comparison, and STL export
 
-In **M5. Contrôle du maillage** (*M5. Mesh Inspection*), click
-**Contrôler la topologie pour l’impression** (*Check Topology for Printing*)
+In **M5. Mesh Inspection**, click **Check Topology for Printing**
 to analyze the active mesh object. The report lists edge-connected components, open boundaries,
 wire and non-manifold edges, non-manifold or isolated vertices, and degenerate
 faces. It does not modify the mesh. Multiple components may be intentional,
@@ -169,14 +169,14 @@ intersections and internal surfaces are not searched for.
 1. In the Outliner, expand the scene and choose the **mesh to inspect**.
    Unhide it with the eye icon if needed, then make it active. The check applies
    only to this object; it does not combine multiple selected objects.
-2. Click **Contrôler la topologie pour l’impression** (*Check Topology for Printing*).
+2. Click **Check Topology for Printing**.
    This command works in Object Mode and Edit Mode. Read the Clone Relief report in the N-panel below the add-on
    controls. The report does not change the selection or geometry.
 3. Read **Edge-Connected Components**. A component is a group of faces joined
    by edges. Multiple components indicate separate islands in that object;
    this alone does not mean they intersect or should be deleted.
 4. To inspect an island, keep the same object active, enter **Edit Mode**, then
-   click **Localiser une composante…** (*Locate a Component…*). Choose the row showing its rank and face
+   click **Locate a Component…**. Choose the row showing its rank and face
    count, then confirm. Clone Relief replaces the current selection with the
    component and frames the view around it; it does not delete or move geometry.
 5. To inspect another object, leave Edit Mode, choose that object in the
@@ -198,18 +198,17 @@ listed as compatible with Blender 4.2 and later. It provides **Solid**,
 and **Overhang** checks. The Clone Relief report remains useful for finding
 and locating components; it does not replace these checks.
 
-After **Apply Relief**, click **Comparer la cible avant/après** (*Compare Target Before/After*) in Edit Mode to
+After **Apply Relief**, click **Compare Target Before and After** in Edit Mode to
 build a temporary side-by-side pair of surfaces from the captured target and
 current result. The working mesh is hidden during comparison. These surfaces
-are open copies for visual inspection, not printable parts. Click **Revenir au
-maillage de travail** (*Return to Working Mesh*) before resuming editing or exporting. The comparison covers
+are open copies for visual inspection, not printable parts. Click **Return to Work Mesh** before resuming editing or exporting. The comparison covers
 only the captured target faces.
 
 ![Source profile, target before transfer, and target after transfer in the synthetic example.](examples/clone_relief_before_after.png)
 
 *Illustrative result from a test scene; it does not predict results on a real scan.*
 
-**Exporter le maillage actif en STL (mm)…** (*Export Active Mesh as STL (mm)…*) opens the file browser and exports only
+**Export Active Mesh as STL (mm)…** opens the file browser and exports only
 the active mesh object, with evaluated modifiers. Conversion to millimeters
 uses the scene’s physical scale (`scale_length`) and object transforms. An STL
 does not store units: check imported dimensions in the slicer before printing.
@@ -229,9 +228,9 @@ Do not start with the original. Make a copy of the file or working mesh, then:
 1. Confirm physical dimensions and object scale in Blender.
 2. Choose a healthy source region and a triangulated target region on the same
    object; avoid open boundaries, tight folds, and highly curved regions.
-3. Capture both regions and run **Diagnostiquer la résolution** (*Diagnose Resolution*). Record source and
+3. Capture both regions and run **Diagnose Resolution**. Record source and
    target values and the estimate.
-4. If the target is undersampled, choose **Densifier la cible…** (*Subdivide Target…*), check the
+4. If the target is undersampled, choose **Subdivide Target…**, check the
    ceiling, and confirm on the copy.
 5. Recapture both regions, apply the default settings, and inspect the relief
    under grazing light.

@@ -49,6 +49,10 @@ python -m pytest -q
   de l’empiler. Le panneau règle aussi l’opacité du remplissage de sélection
   orange; cette couleur de thème est restaurée à la désactivation. Le gain
   d’amplitude est distinct de l’intensité 0–1.
+- `i18n.py` centralise les libellés, infobulles et messages anglais/français.
+  L’anglais sert de texte source; Blender choisit le français selon sa langue
+  d’interface et ses réglages de traduction. Les statuts dynamiques restent
+  stockés en anglais et sont rendus dans la langue active.
 - `tests/` vérifie les cas géométriques synthétiques sans Blender.
 - `scripts/blender_smoke_test.py` vérifie le parcours Blender avec un objet
   synthétique sans toucher au scan.

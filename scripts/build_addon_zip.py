@@ -9,7 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src" / "clone_relief"
-DEFAULT_OUTPUT = ROOT / "dist" / "blender_clone_relief_0.1.0.zip"
+DEFAULT_OUTPUT = ROOT / "dist" / "blender_clone_relief_0.2.0.zip"
 
 
 def build_addon_zip(output: Path) -> Path:

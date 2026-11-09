@@ -2,13 +2,16 @@
 
 [English translation](HANDOFF.en.md)
 
-- **Date :** 7 novembre 2026
+- **Date :** 9 novembre 2026
 - **Dépôt :** Blender-CloneRelief, branche locale staging
 - **Cible :** Blender 4.5.8 LTS sur macOS Intel; usage au trackpad, sans pavé numérique
-- **État :** M0–M4 réalisés dans le commit `07e55e6`. M5 est implémenté dans
-  le code local : audit topologique en lecture seule, comparaison temporaire de
-  la cible et export STL du seul objet actif en millimètres. L’archive doit être
-  reconstruite et ces fonctions restent à valider dans Blender avant usage.
+- **État :** M0–M5 sont implémentés; M6 prépare la qualification du résultat
+  pour l’impression. La version 0.2.0 ajoute la localisation FR/EN de
+  l’interface selon les préférences Blender. La première preview localisée a
+  été validée par l’utilisateur; une capture a ensuite révélé des boutons
+  encore en anglais, désormais explicitement traduits dans le code. Cette
+  dernière correction reste à vérifier dans Blender. Le résultat n’est pas
+  qualifié pour l’impression.
 
 ## Objectif et décision fonctionnelle actuelle
 
@@ -58,6 +61,11 @@ reconstruit pas les détails absents du scan.
   des captures en Edit Mode tant que l’objet et sa topologie correspondent.
   **Localiser une composante…** permet de choisir un groupe par nombre de faces,
   le sélectionne et cadre la vue sans modifier sa géométrie.
+- **Localisation FR/EN :** la version 0.2.0 centralise les textes visibles et
+  suit la langue d’interface Blender. La première preview a été validée, mais
+  une capture a montré que les libellés de boutons transmis explicitement ne
+  suivaient pas tous la langue. Le code les fait maintenant passer par le
+  catalogue; cette dernière correction reste à vérifier dans Blender.
 
 Le 9 novembre, un traceback pendant le dessin du panneau indiquait que l’icône
 `MOD_DIFFERENCE` du bouton de comparaison n’existe pas dans Blender 4.5. Cette

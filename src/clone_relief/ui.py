@@ -5,9 +5,23 @@ from textwrap import wrap
 import bpy
 from bpy.props import CollectionProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
 
+from .i18n import format_message, format_status, translate
+
 
 _SELECTION_THEME_COLORS = ("face_select", "face_mode_select")
 _ORIGINAL_SELECTION_OPACITY: dict[str, float] | None = None
+
+
+_MODE_LABELS = {
+    "OBJECT": "Object",
+    "EDIT_MESH": "Edit Mesh",
+    "SCULPT": "Sculpt",
+    "PAINT_WEIGHT": "Weight Paint",
+    "PAINT_VERTEX": "Vertex Paint",
+    "PAINT_TEXTURE": "Texture Paint",
+    "POSE": "Pose",
+    "PARTICLE": "Particle",
+}
 
 
 def _theme_view_3d():
@@ -65,8 +79,8 @@ class CLONERELIEF_PG_message_line(bpy.types.PropertyGroup):
     """One selectable and copyable line from the latest operator message."""
 
     text: StringProperty(
-        name="Ligne du message",
-        description="Ligne du résultat; utilisez le bouton pour copier le message complet",
+        name="Message Line",
+        description="Result line; use the button to copy the full message",
     )
 
 
@@ -100,8 +114,8 @@ class CLONERELIEF_PG_settings(bpy.types.PropertyGroup):
     """Persistent user-facing settings for Clone Relief operators."""
 
     selection_opacity: FloatProperty(
-        name="Opacité de sélection",
-        description="Réduit le remplissage orange des faces sélectionnées dans la vue 3D",
+        name="Selection Opacity",
+        description="Reduces the orange fill of selected faces in the 3D View",
         default=0.08,
         min=0.0,
         max=1.0,
@@ -127,7 +141,7 @@ class CLONERELIEF_PG_settings(bpy.types.PropertyGroup):
     )
     scale: FloatProperty(
         name="Pattern Scale",
-        description="Physical motif size; 2.0 doubles its wavelength",
+        description="Physical pattern size; 2.0 doubles its wavelength",
         default=1.0,
         min=0.001,
         soft_max=4.0,
@@ -149,23 +163,23 @@ class CLONERELIEF_PG_settings(bpy.types.PropertyGroup):
         precision=5,
     )
     relief_direction: EnumProperty(
-        name="Mode de transfert",
-        description="Transférer tout le motif vers l’extérieur ou conserver creux et bosses signés",
+        name="Transfer Mode",
+        description="Move the whole pattern outward or preserve signed peaks and valleys",
         items=(
-            ("OUTWARD", "Unidirectionnel (+ normale)", "Les sommets ne passent pas sous la surface cible"),
-            ("BIDIRECTIONAL", "Bidirectionnel (± normale)", "Transfère les creux et les bosses de part et d’autre"),
+            ("OUTWARD", "Unidirectional (+ normal)", "Only displace outward along target normals"),
+            ("BIDIRECTIONAL", "Bidirectional (± normal)", "Keep positive and negative source deviations"),
         ),
         default="OUTWARD",
     )
     subdivision_cuts: IntProperty(
-        name="Coupes par arête",
+        name="Cuts per Edge",
         description="Number of equal segments inserted into each selected edge",
         default=1,
         min=1,
         max=8,
     )
     max_added_faces: IntProperty(
-        name="Maximum de faces ajoutées",
+        name="Maximum Added Faces",
         description="Safety limit checked against a conservative face-count estimate",
         default=250000,
         min=1,
@@ -197,7 +211,7 @@ def _draw_last_message(
     message_box = layout.box()
     message_box.operator(
         "clone_relief.copy_message",
-        text="Copier le message complet",
+        text=translate("Copy Full Message"),
         icon="COPYDOWN",
     )
     lines = list(settings.message_lines)
@@ -244,48 +258,53 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         layout = self.layout
         settings = getattr(context.scene, "clone_relief_settings", None)
         if settings is None:
-            layout.label(text="Settings are not registered", icon="ERROR")
+            layout.label(text=translate("Settings are not registered"), icon="ERROR")
             return
 
         obj = context.edit_object or context.active_object
         if obj is None or obj.type != "MESH":
-            layout.label(text="Select a mesh object")
+            layout.label(text=translate("Select a mesh object"))
         else:
-            layout.label(text="Active mesh ready")
-        layout.label(text=f"Mode: {context.mode.replace('_', ' ').title()}")
-        layout.prop(settings, "selection_opacity", text="Opacité sélection")
+            layout.label(text=translate("Active mesh ready"))
+        mode_label = translate(_MODE_LABELS.get(context.mode, context.mode.replace("_", " ").title()))
+        layout.label(text=format_message("Mode: {mode}", mode=mode_label))
+        layout.prop(settings, "selection_opacity", text=translate("Selection Opacity"))
 
-        layout.label(text="1. Capture one connected source region")
-        layout.label(text="Ombrage Solid et X-Ray désactivé : seule la surface visible est sélectionnée.")
+        layout.label(text=translate("1. Capture one connected source region"))
+        layout.label(text=translate("Use Solid shading and turn X-Ray off so only visible surfaces are selected."))
         column = layout.column(align=True)
         row = column.row(align=True)
-        row.operator("clone_relief.capture_source", text="Capture Source")
-        row.operator("clone_relief.restore_source_selection", text="Reselect Source")
-        column.label(text=f"Source: {settings.source_status}")
-        layout.label(text="2. Select a separate target region on this same mesh")
+        row.operator("clone_relief.capture_source", text=translate("Capture Source"))
+        row.operator("clone_relief.restore_source_selection", text=translate("Reselect Source"))
+        column.label(
+            text=format_message("Source: {status}", status=format_status(settings.source_status))
+        )
+        layout.label(text=translate("2. Select a separate target region on this same mesh"))
         target_column = layout.column(align=True)
         row = target_column.row(align=True)
-        row.operator("clone_relief.capture_target", text="Capture Target")
-        row.operator("clone_relief.restore_target_selection", text="Reselect Target")
-        target_column.label(text=f"Target: {settings.target_status}")
+        row.operator("clone_relief.capture_target", text=translate("Capture Target"))
+        row.operator("clone_relief.restore_target_selection", text=translate("Reselect Target"))
+        target_column.label(
+            text=format_message("Target: {status}", status=format_status(settings.target_status))
+        )
 
         layout.separator()
-        layout.label(text="3. Preview, adjust, then apply")
+        layout.label(text=translate("3. Preview, adjust, then apply"))
         column = layout.column(align=True)
-        column.prop(settings, "intensity")
-        column.prop(settings, "gain")
-        column.prop(settings, "scale")
-        column.prop(settings, "falloff_fraction")
-        column.prop(settings, "relief_direction")
-        column.prop(settings, "max_displacement")
-        preview_operator = column.operator("clone_relief.preview", text="Preview Effect")
+        column.prop(settings, "intensity", text=translate("Intensity"))
+        column.prop(settings, "gain", text=translate("Relief Gain"))
+        column.prop(settings, "scale", text=translate("Pattern Scale"))
+        column.prop(settings, "falloff_fraction", text=translate("Edge Falloff"))
+        column.prop(settings, "relief_direction", text=translate("Transfer Mode"))
+        column.prop(settings, "max_displacement", text=translate("Maximum Displacement"))
+        preview_operator = column.operator("clone_relief.preview", text=translate("Preview Effect"))
         preview_operator.intensity = settings.intensity
         preview_operator.gain = settings.gain
         preview_operator.scale = settings.scale
         preview_operator.falloff_fraction = settings.falloff_fraction
         preview_operator.max_displacement = settings.max_displacement
         preview_operator.direction = settings.relief_direction
-        apply_operator = column.operator("clone_relief.apply", text="Apply Relief")
+        apply_operator = column.operator("clone_relief.apply", text=translate("Apply Relief"))
         apply_operator.intensity = settings.intensity
         apply_operator.gain = settings.gain
         apply_operator.scale = settings.scale
@@ -295,15 +314,15 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         _draw_last_message(layout, context, settings)
 
         layout.separator()
-        layout.label(text="M5. Contrôle du maillage")
+        layout.label(text=translate("M5. Mesh Inspection"))
         layout.operator(
             "clone_relief.check_printability",
-            text="Contrôler la topologie pour l’impression",
+            text=translate("Check Topology for Printing"),
             icon="MESH_DATA",
         )
         layout.operator(
             "clone_relief.inspect_component",
-            text="Localiser une composante…",
+            text=translate("Locate a Component…"),
             icon="VIEWZOOM",
         )
         comparison_collection = bpy.data.collections.get(
@@ -312,32 +331,32 @@ class CLONERELIEF_PT_sidebar(bpy.types.Panel):
         if comparison_collection is None:
             layout.operator(
                 "clone_relief.compare_target",
-                text="Comparer la cible avant/après",
+                text=translate("Compare Target Before and After"),
                 icon="MODIFIER",
             )
         else:
             layout.operator(
                 "clone_relief.clear_comparison",
-                text="Revenir au maillage de travail",
+                text=translate("Return to Work Mesh"),
                 icon="LOOP_BACK",
             )
         layout.operator(
             "clone_relief.export_stl",
-            text="Exporter le maillage actif en STL (mm)…",
+            text=translate("Export Active Mesh as STL (mm)…"),
             icon="EXPORT",
         )
-        layout.label(text="Le contrôle topologique ne détecte pas les auto-intersections ni les parois internes.")
+        layout.label(text=translate("Topology check does not detect self-intersections or internal walls."))
 
         layout.separator()
-        layout.label(text="Densification de la cible")
-        layout.label(text="Ajoute des faces dans la zone cible capturée pour mieux représenter le relief.")
+        layout.label(text=translate("Target Subdivision"))
+        layout.label(text=translate("Adds faces to the captured target region to represent the relief more accurately."))
         column = layout.column(align=True)
-        column.operator("clone_relief.diagnose_resolution", text="Diagnostiquer la résolution")
-        column.prop(settings, "subdivision_cuts")
-        column.prop(settings, "max_added_faces")
+        column.operator("clone_relief.diagnose_resolution", text=translate("Diagnose Resolution"))
+        column.prop(settings, "subdivision_cuts", text=translate("Cuts per Edge"))
+        column.prop(settings, "max_added_faces", text=translate("Maximum Added Faces"))
         subdivision_operator = column.operator(
             "clone_relief.subdivide_target",
-            text="Densifier la cible…",
+            text=translate("Subdivide Target…"),
         )
         subdivision_operator.cuts = settings.subdivision_cuts
         subdivision_operator.max_added_faces = settings.max_added_faces

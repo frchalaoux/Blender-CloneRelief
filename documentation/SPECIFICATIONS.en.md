@@ -170,6 +170,10 @@ relationship between intensity and displacement ambiguous.
   by rank and face count, select its faces in Edit Mode, and frame the view
   without changing geometry. Reject a selection based on topology that changed
   since components were calculated.
+- **F-24 — Interface localization:** centralize visible text in an
+  English/French catalog. Follow Blender's interface language when interface
+  translations are enabled; use English for other languages. Language changes
+  must also apply to dynamic statuses already displayed.
 
 #### Initial decision for M3
 

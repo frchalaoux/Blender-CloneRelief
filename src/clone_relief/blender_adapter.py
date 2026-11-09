@@ -11,6 +11,7 @@ import bpy
 from mathutils import Vector
 
 from .geometry import Face, MeshPatch, Vec3
+from .i18n import format_message, translate
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,7 +59,7 @@ def active_edit_mesh(context: bpy.types.Context) -> tuple[bpy.types.Object, bmes
     """Return the active edit-mode mesh and its live BMesh or raise clearly."""
     obj = context.edit_object
     if obj is None or obj.type != "MESH" or obj.mode != "EDIT":
-        raise ValueError("Select a mesh object and enter Edit Mode first")
+        raise ValueError(format_message("Select a mesh object and enter Edit Mode first"))
     bm = bmesh.from_edit_mesh(obj.data)
     bm.verts.index_update()
     bm.edges.index_update()
@@ -114,8 +115,11 @@ def _assert_one_connected_component(faces: tuple[bmesh.types.BMFace, ...]) -> No
         if len(component_sizes) > 3:
             sizes += ", …"
         raise ValueError(
-            f"La sélection contient {len(component_sizes)} groupes de faces séparés "
-            f"({sizes}). Gardez un seul groupe relié par des arêtes."
+            format_message(
+                "The selection contains {groups} separate face groups ({sizes}). Keep one group connected by edges.",
+                groups=len(component_sizes),
+                sizes=sizes,
+            )
         )
 
 
@@ -127,12 +131,11 @@ def capture_selection(
 ) -> CapturedSelection:
     """Capture selected faces into a compact world-space snapshot."""
     if role not in {"source", "target"}:
-        raise ValueError("role must be 'source' or 'target'")
+        raise ValueError(format_message("role must be 'source' or 'target'"))
     obj, bm = active_edit_mesh(context)
     selected_faces = tuple(sorted((face for face in bm.faces if face.select), key=lambda face: face.index))
     if not selected_faces:
-        role_name = "source" if role == "source" else "cible"
-        raise ValueError(f"Aucune face sélectionnée pour la {role_name}.")
+        raise ValueError(format_message("No face selected for the {role}.", role=translate(role)))
     components = _connected_components(selected_faces)
     ignored_component_sizes: tuple[int, ...] = ()
     if len(components) > 1:
@@ -183,12 +186,14 @@ def validate_capture(
 ) -> None:
     """Ensure the selection still belongs to the same unchanged mesh topology."""
     if obj.as_pointer() != capture.object_pointer:
-        raise ValueError(f"Captured {capture.object_name} data; return to that object")
+        raise ValueError(
+            format_message("Captured data belongs to {object}; return to that object", object=capture.object_name)
+        )
     signature = current_signature if current_signature is not None else topology_signature(bm)
     if signature != capture.topology_signature:
-        raise ValueError("Mesh topology changed after capture; capture source and target again")
+        raise ValueError(format_message("Mesh topology changed after capture; capture source and target again"))
     if any(index >= len(bm.verts) for index in capture.vertex_indices):
-        raise ValueError("Captured vertex indices are no longer valid; capture again")
+        raise ValueError(format_message("Captured vertex indices are no longer valid; capture again"))
 
 
 def current_patch(
@@ -198,7 +203,7 @@ def current_patch(
 ) -> MeshPatch:
     """Build a patch from current vertex positions and captured connectivity."""
     if abs(obj.matrix_world.to_3x3().determinant()) <= 1e-15:
-        raise ValueError("Object has a singular transform; apply or correct its scale first")
+        raise ValueError(format_message("Object has a singular transform; apply or correct its scale first"))
     world_matrix = obj.matrix_world
     coordinates = tuple(
         tuple(float(value) for value in (world_matrix @ bm.verts[index].co))
@@ -215,9 +220,9 @@ def write_world_coordinates(
 ) -> None:
     """Write world-space results back into selected vertices' local coordinates."""
     if len(vertex_indices) != len(coordinates):
-        raise ValueError("coordinate and target vertex counts differ")
+        raise ValueError(format_message("Coordinate and target vertex counts differ"))
     if abs(obj.matrix_world.to_3x3().determinant()) <= 1e-15:
-        raise ValueError("Object has a singular transform; apply or correct its scale first")
+        raise ValueError(format_message("Object has a singular transform; apply or correct its scale first"))
     inverse_world = obj.matrix_world.inverted()
     for index, point in zip(vertex_indices, coordinates):
         bm.verts[index].co = inverse_world @ Vector(point)

@@ -2,13 +2,15 @@
 
 [English](HANDOFF.en.md) · [Français](HANDOFF.md)
 
-- **Date:** November 7, 2026
+- **Date:** November 9, 2026
 - **Repository:** Blender-CloneRelief, local `staging` branch
 - **Target:** Blender 4.5.8 LTS on Intel macOS; trackpad use, no numeric keypad
-- **Status:** M0–M4 were completed in commit `07e55e6`. M5 is implemented in
-  the local code: read-only topology audit, temporary target comparison, and
-  STL export of the active object only in millimeters. The archive needs to be
-  rebuilt, and these functions still need Blender validation before use.
+- **Status:** M0–M5 are implemented; M6 prepares qualification of the result
+  for 3D printing. Version 0.2.0 adds FR/EN interface localization following
+  Blender preferences. The user confirmed the first localized preview; a later
+  screenshot revealed buttons still in English, now explicitly translated in
+  code. This final correction still needs Blender verification. The result is
+  not qualified for printing.
 
 ## Current goal and functional decision
 
@@ -56,6 +58,11 @@ does not reconstruct details missing from the scan.
   Source/Target** restore captured faces in Edit Mode while the object and
   topology still match. **Locate a Component…** lets the user choose a group by
   face count, selects it, and frames the view without changing its geometry.
+- **FR/EN localization:** version 0.2.0 centralizes visible text and follows
+  Blender's interface language. The first preview was confirmed, but a later
+  screenshot showed that explicitly supplied button labels did not all follow
+  the selected language. The code now routes them through the catalog; this
+  final correction still needs Blender verification.
 
 On November 9, a traceback while drawing the panel indicated that icon
 `MOD_DIFFERENCE` does not exist in Blender 4.5. This error stopped the M5

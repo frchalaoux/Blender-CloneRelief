@@ -2,15 +2,21 @@
 
 [English translation](USER_GUIDE.en.md)
 
-**Prototype :** version 0.1.0 pour Blender 4.5.8 LTS. Le contrôle M5 a été
+**Prototype :** version 0.2.0 pour Blender 4.5.8 LTS. Le contrôle M5 a été
 utilisé sur un scan Pika, mais le transfert n’y a pas encore été validé et
 l’add-on n’est pas qualifié pour l’impression 3D.
+
+**Langue :** l’interface de Clone Relief suit la langue choisie dans Blender
+en français ou en anglais. Pour afficher les textes français, active
+**Interface** dans **Edit → Preferences → Interface → Translation**. Les
+autres langues de Blender affichent les textes anglais. La version 0.2.0
+localise le panneau, les boutons, les dialogues, les infobulles et les rapports.
 
 ## Installation sur macOS
 
 ### Installer la Release publiée (parcours recommandé)
 
-1. Télécharger l’[archive ZIP de Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Ne pas la décompresser.
+1. Télécharger l’[archive ZIP de Clone Relief 0.2.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.2.0/blender_clone_relief_0.2.0.zip). Ne pas la décompresser.
 2. Dans Blender 4.5.8, ouvrir **Blender → Preferences → Get Extensions**.
 3. Dans le menu en haut à droite, choisir **Install from Disk…** et sélectionner le ZIP téléchargé.
 4. Dans les préférences, chercher **Clone Relief** et activer l’add-on.
@@ -26,7 +32,7 @@ Ignore cette section si le but est seulement d’installer la Release publiée. 
 python3.11 scripts/build_addon_zip.py
 ```
 
-La commande crée `dist/blender_clone_relief_0.1.0.zip`, mais **n’installe pas** l’add-on. Pour utiliser le ZIP construit, reprendre les étapes Blender ci-dessus et sélectionner le fichier situé dans `dist/`.
+La commande crée `dist/blender_clone_relief_0.2.0.zip`, mais **n’installe pas** l’add-on. Pour utiliser le ZIP construit, reprendre les étapes Blender ci-dessus et sélectionner le fichier situé dans `dist/`.
 
 À l’activation de l’add-on et à l’ouverture d’un fichier Blender, la vue est préparée en **Solid**, avec **X-Ray désactivé** et la sélection de faces active.
 
