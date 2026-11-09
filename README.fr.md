@@ -40,7 +40,7 @@ impression représentative. Voir le [protocole de qualification](documentation/P
 
 ### Installer la Release publiée (recommandé)
 
-Télécharge l’[archive ZIP prête à installer Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Garde-la au format ZIP, sans la décompresser. Pour ce parcours, tu n’as besoin ni de Python 3.11 ni d’une copie du dépôt source. Blender inclut l’environnement Python utilisé par l’add-on.
+Télécharge l’[archive ZIP prête à installer Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Garde-la au format ZIP, sans la décompresser. Pour ce parcours, tu n’as pas besoin d’installer ni de lancer Python séparément, et tu n’as pas besoin d’une copie du dépôt source. Blender exécute l’add-on avec le Python intégré à Blender; il est distinct de la commande `python3.11` du Terminal présentée plus bas.
 
 Dans Blender 4.5.8 :
 
@@ -49,9 +49,9 @@ Dans Blender 4.5.8 :
 3. Dans les préférences, recherche **Clone Relief** et active l’add-on.
 4. Dans la vue 3D, ouvre la barre latérale avec **N**, puis choisis l’onglet **Clone Relief**.
 
-### Construire le ZIP depuis le code source (développement)
+### Construire le ZIP depuis le code source (développeurs uniquement)
 
-Python 3.11 n’est nécessaire que pour cette étape de construction. Depuis la racine d’une copie locale du dépôt, lance :
+Ignore cette section si tu veux seulement installer la Release publiée. Ce parcours sert aux développeurs qui reconstruisent le ZIP à partir du code source. Ici, `python3.11` désigne une installation autonome de Python 3.11 sur l’ordinateur, accessible comme commande dans le Terminal. Elle est distincte du Python intégré à Blender, même si le numéro de version est le même. Le script n’installe pas Python. Si le Terminal répond que `python3.11` est introuvable, il faut d’abord installer Python 3.11 séparément.
 
 ```bash
 python3.11 scripts/build_addon_zip.py

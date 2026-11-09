@@ -40,7 +40,7 @@ See the [qualification protocol](documentation/PRINT_QUALIFICATION.en.md).
 
 ### Install the published release (recommended)
 
-Download the ready-to-install [Clone Relief 0.1.0 ZIP](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Keep it as a ZIP; do not extract it. You do not need Python 3.11 or a copy of the source repository for this route. Blender includes the Python runtime used by the add-on.
+Download the ready-to-install [Clone Relief 0.1.0 ZIP](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Keep it as a ZIP; do not extract it. For this route, you do not need to install or run Python separately, and you do not need a copy of the source repository. Blender runs the add-on with the Python interpreter bundled inside Blender; that is separate from the `python3.11` Terminal command shown below.
 
 In Blender 4.5.8:
 
@@ -49,9 +49,9 @@ In Blender 4.5.8:
 3. Find **Clone Relief** in Preferences and enable it.
 4. In the 3D View, press **N** to open the sidebar and choose the **Clone Relief** tab.
 
-### Build the ZIP from source (developers)
+### Build the ZIP from source (developers only)
 
-Python 3.11 is needed only for this build step. From the root of a local source checkout, run:
+Skip this section if you only want to install the published release. This build route is for developers rebuilding the ZIP from source. Here, `python3.11` means a standalone Python 3.11 installation on your computer, available as a command in Terminal. It is separate from Blender's bundled Python, even if both have the same version number. The script does not install Python. If Terminal says `python3.11` is not found, install standalone Python 3.11 before running this command.
 
 ```bash
 python3.11 scripts/build_addon_zip.py

@@ -20,11 +20,11 @@ by its English translation in parentheses.
 4. In Preferences, search for **Clone Relief** and enable the add-on.
 5. In the 3D View, open the sidebar with **N**, then choose the **Clone Relief** tab.
 
-You do not need a separate Python 3.11 installation or a source checkout to install and use the release; Blender includes its own Python runtime.
+For this route, you do not need to install or run Python separately, or to have a source checkout. Blender runs the add-on using the Python interpreter bundled inside Blender. That interpreter is separate from the standalone `python3.11` command used in the build instructions below.
 
-### Build the ZIP from source (developers)
+### Build the ZIP from source (developers only)
 
-Python 3.11 is needed only to build the archive. From the root of a local source checkout, run:
+Skip this section if you only want to install the published release. It is for developers rebuilding the ZIP from source. Here, `python3.11` means a standalone Python 3.11 installation on your computer, available as a command in Terminal. It is separate from Blender's bundled Python, even if both have the same version number. The script does not install Python. If Terminal says `python3.11` is not found, install standalone Python 3.11 before running this command.
 
 ```bash
 python3.11 scripts/build_addon_zip.py

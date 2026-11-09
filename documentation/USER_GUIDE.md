@@ -16,11 +16,11 @@ l’add-on n’est pas qualifié pour l’impression 3D.
 4. Dans les préférences, chercher **Clone Relief** et activer l’add-on.
 5. Dans la vue 3D, ouvrir la barre latérale avec **N**, puis choisir l’onglet **Clone Relief**.
 
-Pour installer et utiliser la Release, il ne faut ni Python 3.11 séparé ni copie du dépôt source : Blender inclut son propre environnement Python.
+Pour ce parcours, il ne faut ni installer ni lancer Python séparément, ni avoir une copie du dépôt source. Blender exécute l’add-on avec le Python intégré à Blender. Cet interpréteur est distinct de la commande autonome `python3.11` utilisée dans les instructions de construction ci-dessous.
 
-### Construire le ZIP depuis le code source (développement)
+### Construire le ZIP depuis le code source (développeurs uniquement)
 
-Python 3.11 est nécessaire uniquement pour fabriquer l’archive. Depuis la racine d’une copie locale du dépôt, lancer :
+Ignore cette section si le but est seulement d’installer la Release publiée. Elle s’adresse aux développeurs qui reconstruisent le ZIP depuis le code source. Ici, `python3.11` désigne une installation autonome de Python 3.11 sur l’ordinateur, accessible comme commande dans le Terminal. Elle est distincte du Python intégré à Blender, même si le numéro de version est le même. Le script n’installe pas Python. Si le Terminal indique que `python3.11` est introuvable, il faut installer Python 3.11 séparément avant de lancer cette commande.
 
 ```bash
 python3.11 scripts/build_addon_zip.py
