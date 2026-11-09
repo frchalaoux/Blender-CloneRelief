@@ -10,7 +10,7 @@ and lets you tune the transfer before applying it.
 
 **Version:** 0.1.0 · **Target Blender version:** 4.5.8 LTS · **Reference platform:** Intel macOS
 
-**Versions and tags:** [Browse all GitHub tags](https://github.com/frchalaoux/Blender-CloneRelief/tags). No stable or development release is published yet.
+**Versions and tags:** [Latest release: v0.1.0 (prototype)](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.1.0) · [Browse all GitHub tags](https://github.com/frchalaoux/Blender-CloneRelief/tags). No development release is published yet.
 
 > Clone Relief is a prototype. It has not been qualified to guarantee that a
 > mesh is printable.
