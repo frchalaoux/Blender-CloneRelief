@@ -38,7 +38,11 @@ See the [qualification protocol](documentation/PRINT_QUALIFICATION.en.md).
 
 ## Installation
 
-From a local copy of the repository, build the add-on archive:
+The add-on is currently distributed as source; no ready-to-install archive is
+published yet. To install it from this repository, first build the ZIP archive
+with Python 3.11 installed on your computer. This command does not install
+Python. Blender includes its own Python runtime, so a separate Python
+installation is not needed to install or run the add-on in Blender.
 
 ```bash
 python3.11 scripts/build_addon_zip.py
@@ -50,6 +54,10 @@ The script creates `dist/blender_clone_relief_0.1.0.zip`. In Blender:
 2. From the top-right menu, choose **Install from Disk…**, then select the ZIP archive.
 3. Find **Clone Relief** in Preferences and enable it.
 4. In the 3D View, press **N** to open the sidebar and choose the **Clone Relief** tab.
+
+The add-on contains no platform-specific native libraries and is expected to
+work on platforms supported by Blender 4.5.8. It has only been tested on Intel
+macOS so far; Windows, Linux, and Apple Silicon remain unverified.
 
 For macOS installation details and the full Blender workflow, see the
 [English user guide](documentation/USER_GUIDE.en.md) or the
