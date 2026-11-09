@@ -38,30 +38,32 @@ See the [qualification protocol](documentation/PRINT_QUALIFICATION.en.md).
 
 ## Installation
 
-The add-on is currently distributed as source; no ready-to-install archive is
-published yet. To install it from this repository, first build the ZIP archive
-with Python 3.11 installed on your computer. This command does not install
-Python. Blender includes its own Python runtime, so a separate Python
-installation is not needed to install or run the add-on in Blender.
+### Install the published release (recommended)
+
+Download the ready-to-install [Clone Relief 0.1.0 ZIP](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Keep it as a ZIP; do not extract it. You do not need Python 3.11 or a copy of the source repository for this route. Blender includes the Python runtime used by the add-on.
+
+In Blender 4.5.8:
+
+1. Open **Blender → Preferences → Get Extensions**.
+2. From the top-right menu, choose **Install from Disk…** and select the downloaded ZIP.
+3. Find **Clone Relief** in Preferences and enable it.
+4. In the 3D View, press **N** to open the sidebar and choose the **Clone Relief** tab.
+
+### Build the ZIP from source (developers)
+
+Python 3.11 is needed only for this build step. From the root of a local source checkout, run:
 
 ```bash
 python3.11 scripts/build_addon_zip.py
 ```
 
-The script creates `dist/blender_clone_relief_0.1.0.zip`. In Blender:
-
-1. Open **Blender → Preferences → Get Extensions**.
-2. From the top-right menu, choose **Install from Disk…**, then select the ZIP archive.
-3. Find **Clone Relief** in Preferences and enable it.
-4. In the 3D View, press **N** to open the sidebar and choose the **Clone Relief** tab.
+This creates `dist/blender_clone_relief_0.1.0.zip`; it does **not** install the add-on. To use that locally built archive, follow the Blender steps above and select the ZIP in `dist/` instead of the downloaded release file.
 
 The add-on contains no platform-specific native libraries and is expected to
 work on platforms supported by Blender 4.5.8. It has only been tested on Intel
 macOS so far; Windows, Linux, and Apple Silicon remain unverified.
 
-For macOS installation details and the full Blender workflow, see the
-[English user guide](documentation/USER_GUIDE.en.md) or the
-[French user guide](documentation/USER_GUIDE.md).
+For the full Blender workflow, see the [English user guide](documentation/USER_GUIDE.en.md) or the [French user guide](documentation/USER_GUIDE.md).
 
 ## Quick start
 

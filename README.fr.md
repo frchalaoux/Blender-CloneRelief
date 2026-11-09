@@ -38,33 +38,33 @@ impression représentative. Voir le [protocole de qualification](documentation/P
 
 ## Installation
 
-L’add-on est actuellement distribué sous forme de code source; aucune archive
-prête à installer n’est encore publiée. Pour l’installer depuis ce dépôt, il
-faut d’abord construire l’archive ZIP avec Python 3.11 installé sur
-l’ordinateur. Cette commande n’installe pas Python. Blender inclut son propre
-environnement Python : il n’est donc pas nécessaire d’installer Python
-séparément pour installer ou utiliser l’add-on dans Blender.
+### Installer la Release publiée (recommandé)
+
+Télécharge l’[archive ZIP prête à installer Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Garde-la au format ZIP, sans la décompresser. Pour ce parcours, tu n’as besoin ni de Python 3.11 ni d’une copie du dépôt source. Blender inclut l’environnement Python utilisé par l’add-on.
+
+Dans Blender 4.5.8 :
+
+1. Ouvre **Blender → Preferences → Get Extensions**.
+2. Dans le menu en haut à droite, choisis **Install from Disk…** et sélectionne le ZIP téléchargé.
+3. Dans les préférences, recherche **Clone Relief** et active l’add-on.
+4. Dans la vue 3D, ouvre la barre latérale avec **N**, puis choisis l’onglet **Clone Relief**.
+
+### Construire le ZIP depuis le code source (développement)
+
+Python 3.11 n’est nécessaire que pour cette étape de construction. Depuis la racine d’une copie locale du dépôt, lance :
 
 ```bash
 python3.11 scripts/build_addon_zip.py
 ```
 
-Le script crée `dist/blender_clone_relief_0.1.0.zip`. Dans Blender :
-
-1. Ouvre **Blender → Preferences → Get Extensions**.
-2. Dans le menu en haut à droite, choisis **Install from Disk…**, puis
-   sélectionne l’archive ZIP.
-3. Dans les préférences, recherche **Clone Relief** et active l’add-on.
-4. Dans la vue 3D, ouvre la barre latérale avec **N**, puis choisis l’onglet
-   **Clone Relief**.
+Cela crée `dist/blender_clone_relief_0.1.0.zip`; la commande **n’installe pas** l’add-on dans Blender. Pour utiliser cette archive construite localement, suis ensuite les étapes Blender ci-dessus et sélectionne le ZIP dans `dist/` au lieu du fichier téléchargé depuis la Release.
 
 L’add-on ne contient aucune bibliothèque native dépendante d’un système et
-devrait fonctionner sur les plateformes prises en charge par Blender 4.5.8.
+est censé fonctionner sur les plateformes prises en charge par Blender 4.5.8.
 Il a seulement été testé sur macOS Intel; Windows, Linux et les Mac Apple
 Silicon restent à vérifier.
 
-Le [guide utilisateur](documentation/USER_GUIDE.md) contient les détails
-d’installation pour macOS et le parcours complet dans Blender.
+Le [guide utilisateur](documentation/USER_GUIDE.md) décrit le parcours complet dans Blender.
 
 ## Utilisation rapide
 

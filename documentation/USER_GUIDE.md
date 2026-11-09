@@ -8,25 +8,29 @@ l’add-on n’est pas qualifié pour l’impression 3D.
 
 ## Installation sur macOS
 
-1. Dans un Terminal, se placer à la racine du dépôt et construire l’archive :
+### Installer la Release publiée (parcours recommandé)
 
-   ```bash
-   python3.11 scripts/build_addon_zip.py
-   ```
-
-   L’archive est créée dans `dist/blender_clone_relief_0.1.0.zip`.
-2. Dans Blender 4.5.8, ouvrir **Blender → Preferences** puis **Get Extensions**.
-3. Dans le menu en haut à droite, choisir **Install from Disk…** et ouvrir
-   l’archive créée à l’étape 1.
+1. Télécharger l’[archive ZIP de Clone Relief 0.1.0](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Ne pas la décompresser.
+2. Dans Blender 4.5.8, ouvrir **Blender → Preferences → Get Extensions**.
+3. Dans le menu en haut à droite, choisir **Install from Disk…** et sélectionner le ZIP téléchargé.
 4. Dans les préférences, chercher **Clone Relief** et activer l’add-on.
-5. Dans la vue 3D, ouvrir la barre latérale avec **N**, puis choisir l’onglet
-   **Clone Relief**.
+5. Dans la vue 3D, ouvrir la barre latérale avec **N**, puis choisir l’onglet **Clone Relief**.
 
-À l’activation de l’add-on et à l’ouverture d’un fichier Blender, la vue est
-préparée en **Solid**, avec **X-Ray désactivé** et la sélection de faces active.
+Pour installer et utiliser la Release, il ne faut ni Python 3.11 séparé ni copie du dépôt source : Blender inclut son propre environnement Python.
 
-Blender 4.5 documente l’installation depuis un fichier ZIP, y compris pour les
-add-ons historiques, dans le [guide officiel des Add-ons](https://docs.blender.org/manual/en/4.5/editors/preferences/addons.html).
+### Construire le ZIP depuis le code source (développement)
+
+Python 3.11 est nécessaire uniquement pour fabriquer l’archive. Depuis la racine d’une copie locale du dépôt, lancer :
+
+```bash
+python3.11 scripts/build_addon_zip.py
+```
+
+La commande crée `dist/blender_clone_relief_0.1.0.zip`, mais **n’installe pas** l’add-on. Pour utiliser le ZIP construit, reprendre les étapes Blender ci-dessus et sélectionner le fichier situé dans `dist/`.
+
+À l’activation de l’add-on et à l’ouverture d’un fichier Blender, la vue est préparée en **Solid**, avec **X-Ray désactivé** et la sélection de faces active.
+
+Blender 4.5 documente l’installation depuis un fichier ZIP, y compris pour les add-ons historiques, dans le [guide officiel des Add-ons](https://docs.blender.org/manual/en/4.5/editors/preferences/addons.html).
 
 ## Protocole conseillé : capturer, prévisualiser, appliquer
 

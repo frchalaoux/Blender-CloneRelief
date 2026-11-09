@@ -12,17 +12,25 @@ by its English translation in parentheses.
 
 ## Installation on macOS
 
-1. In Terminal, go to the repository root and build the archive:
+### Install the published release (recommended)
 
-   ```bash
-   python3.11 scripts/build_addon_zip.py
-   ```
-
-   The archive is created at `dist/blender_clone_relief_0.1.0.zip`.
+1. Download the [Clone Relief 0.1.0 ZIP archive](https://github.com/frchalaoux/Blender-CloneRelief/releases/download/v0.1.0/blender_clone_relief_0.1.0.zip). Do not extract it.
 2. In Blender 4.5.8, open **Blender → Preferences**, then **Get Extensions**.
-3. From the menu at the top right, choose **Install from Disk…** and open the archive from step 1.
+3. From the menu at the top right, choose **Install from Disk…** and select the downloaded ZIP.
 4. In Preferences, search for **Clone Relief** and enable the add-on.
 5. In the 3D View, open the sidebar with **N**, then choose the **Clone Relief** tab.
+
+You do not need a separate Python 3.11 installation or a source checkout to install and use the release; Blender includes its own Python runtime.
+
+### Build the ZIP from source (developers)
+
+Python 3.11 is needed only to build the archive. From the root of a local source checkout, run:
+
+```bash
+python3.11 scripts/build_addon_zip.py
+```
+
+This creates `dist/blender_clone_relief_0.1.0.zip`, but it does **not** install the add-on. To use the locally built ZIP, follow the Blender steps above and select the file in `dist/`.
 
 When the add-on is enabled and a Blender file is opened, the view is prepared
 in **Solid** shading, with **X-Ray disabled** and face selection enabled.
