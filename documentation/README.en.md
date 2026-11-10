@@ -9,6 +9,7 @@ French documents remain the reference.
 
 ## Documents
 
+- [Project Overview](PROJECT_OVERVIEW.en.md) · [Français](PROJECT_OVERVIEW.md) — introduction for users and developers, quick workflow, and getting-started links.
 - [HANDOFF.en.md](HANDOFF.en.md) — current project context, state, and next actions.
 - [SPECIFICATIONS.en.md](SPECIFICATIONS.en.md) — product goals, requirements, and acceptance criteria.
 - [DEVELOPMENT.en.md](DEVELOPMENT.en.md) — environment, M1 math architecture, commands, and limitations.

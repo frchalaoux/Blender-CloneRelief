@@ -10,6 +10,7 @@ racine reste le point d’entrée du projet et donne les commandes rapides.
 
 ## Documents
 
+- [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) · [English](PROJECT_OVERVIEW.en.md) — présentation pour utilisateurs et développeurs, parcours rapide et liens de démarrage.
 - [HANDOFF.md](HANDOFF.md) · [English](HANDOFF.en.md) — contexte du projet, état actuel et prochaine étape.
 - [SPECIFICATIONS.md](SPECIFICATIONS.md) · [English](SPECIFICATIONS.en.md) — objectif produit, exigences et critères d’acceptation.
 - [DEVELOPMENT.md](DEVELOPMENT.md) · [English](DEVELOPMENT.en.md) — environnement, architecture mathématique M1, commandes et limites.

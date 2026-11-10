@@ -99,6 +99,7 @@ l’inspection; efface-la et reviens au maillage de travail avant l’export.
 
 ## Documentation spécialisée
 
+- [Présentation du projet](documentation/PROJECT_OVERVIEW.md) · [English](documentation/PROJECT_OVERVIEW.en.md) — introduction pour utilisateurs et développeurs, parcours rapide et liens de démarrage.
 - [Guide utilisateur](documentation/USER_GUIDE.md) — installation, captures,
   réglages, application, contrôle topologique et export.
 - [Spécifications](documentation/SPECIFICATIONS.md) — exigences fonctionnelles

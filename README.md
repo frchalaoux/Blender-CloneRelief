@@ -94,6 +94,7 @@ clear it and return to the working mesh before exporting.
 
 ## Documentation
 
+- [Project overview](documentation/PROJECT_OVERVIEW.en.md) — introduction for users and developers, with a quick workflow and getting-started links.
 - [User guide](documentation/USER_GUIDE.en.md) — installation, settings, transfer, topology checks, and STL export.
 - [Specifications](documentation/SPECIFICATIONS.en.md) — product requirements and acceptance criteria.
 - [Print qualification](documentation/PRINT_QUALIFICATION.en.md) — evidence and checks for a particular model, printer, material, and profile.
