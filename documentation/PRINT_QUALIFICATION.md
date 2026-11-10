@@ -10,9 +10,10 @@ maillages ni toutes les configurations. Un rapport sans défaut détecté par
 Clone Relief n’est pas une garantie d’imprimabilité.
 
 La première qualification visée est le flux de travail appliqué à une copie du
-scan Pika de la courge. Le fichier original doit rester intact. Le transfert de
-relief, la comparaison avant/après et l’export STL de ce résultat ne sont pas
-encore validés de bout en bout.
+scan Pika de la courge. Le fichier original doit rester intact. L’utilisateur
+confirme qu’une impression représentative du résultat a été réalisée et que
+tout est correct pour le moment; les paramètres détaillés ne sont pas
+consignés.
 
 ## Étapes et preuves requises
 
@@ -75,7 +76,12 @@ conversion en millimètres.
 | Contrôle de l’épaisseur adaptée au procédé et à l’usage | À faire |
 | Export STL du seul objet final et vérification des dimensions importées | À faire |
 | Aperçu des couches dans un trancheur identifié | À faire |
-| Impression représentative et inspection du résultat | À faire |
+| Impression représentative et inspection du résultat | Réalisée; l’utilisateur indique que tout est correct à ce jour. Machine, matériau, profil et trancheur non consignés. |
+
+Cette validation concerne cet essai uniquement. Les paramètres de fabrication
+et les preuves détaillées (dimensions mesurées, réglages et inspection) n’ont
+pas été fournis; les consigner si l’on veut rendre la qualification
+reproductible.
 
 Les validations manuelles doivent être consignées avec la date, les versions
 de Blender et du trancheur, l’identifiant du fichier de travail, l’objet
@@ -172,7 +178,8 @@ le trancheur visé et inspecter son aperçu couche par couche.
 
 ## Critère de conclusion
 
-On pourra dire que le flux a été qualifié pour ce cas précis lorsque les trois
-étapes ont été réalisées sans défaut bloquant et que leurs preuves sont
-consignées. Cela ne permet pas d’affirmer que Clone Relief garantit à lui seul
-qu’un autre maillage soit imprimable.
+L’impression représentative a été réalisée et déclarée correcte à ce jour.
+Pour documenter une qualification reproductible de ce cas, consigner aussi le
+modèle et l’objet exporté, le trancheur, la machine, le matériau, le profil et
+les contrôles effectués. Cela ne permet pas d’affirmer que Clone Relief garantit
+à lui seul qu’un autre maillage soit imprimable.

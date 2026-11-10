@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1600" viewBox="0 0 760 1600">
+<rect width="760" height="1600" fill="#202124"/>
+<rect x="18" y="18" width="724" height="1564" rx="12" fill="#303236" stroke="#4b4d50" stroke-width="2"/>
+<rect x="18" y="18" width="724" height="72" rx="12" fill="#383a3e"/>
+<text x="48" y="64" fill="#f2f2f2" font-family="Arial,sans-serif" font-size="30" font-weight="600">Clone Relief</text>
+<text x="48" y="125" fill="#dedede" font-family="Arial,sans-serif" font-size="21">Active mesh ready  ·  Mode: Edit Mesh</text>
+<text x="48" y="172" fill="#d4d4d4" font-family="Arial,sans-serif" font-size="20">Selection Opacity</text>
+<rect x="296" y="145" width="390" height="38" rx="6" fill="#45474b"/><rect x="296" y="145" width="32" height="38" rx="6" fill="#477bbd"/><text x="640" y="172" fill="#eeeeee" font-family="Arial,sans-serif" font-size="19">0.08</text>
+<text x="48" y="226" fill="#eeeeee" font-family="Arial,sans-serif" font-size="22" font-weight="600">1. Capture one connected source region</text>
+<text x="48" y="259" fill="#c8c8c8" font-family="Arial,sans-serif" font-size="16">Solid shading · X-Ray disabled · visible surface only</text>
+<rect x="48" y="278" width="300" height="50" rx="7" fill="#4b4d50" stroke="#606267"/><text x="86" y="311" fill="#eee" font-family="Arial,sans-serif" font-size="19">Capture Source</text>
+<rect x="360" y="278" width="326" height="50" rx="7" fill="#4b4d50" stroke="#606267"/><text x="394" y="311" fill="#eee" font-family="Arial,sans-serif" font-size="19">Reselect Source</text>
+<text x="48" y="361" fill="#dedede" font-family="Arial,sans-serif" font-size="18">Source: Not captured</text>
+<text x="48" y="411" fill="#eeeeee" font-family="Arial,sans-serif" font-size="22" font-weight="600">2. Select a separate target region on this same mesh</text>
+<rect x="48" y="430" width="300" height="50" rx="7" fill="#4b4d50" stroke="#606267"/><text x="84" y="463" fill="#eee" font-family="Arial,sans-serif" font-size="19">Capture Target</text>
+<rect x="360" y="430" width="326" height="50" rx="7" fill="#4b4d50" stroke="#606267"/><text x="394" y="463" fill="#eee" font-family="Arial,sans-serif" font-size="19">Reselect Target</text>
+<text x="48" y="513" fill="#dedede" font-family="Arial,sans-serif" font-size="18">Target: Not captured</text>
+<line x1="48" y1="548" x2="686" y2="548" stroke="#535559"/>
+<text x="48" y="590" fill="#eeeeee" font-family="Arial,sans-serif" font-size="22" font-weight="600">3. Preview, adjust, then apply</text>
+<g font-family="Arial,sans-serif" font-size="18" fill="#dedede">
+<text x="48" y="638">Intensity</text><text x="48" y="692">Relief Gain</text><text x="48" y="746">Pattern Scale</text><text x="48" y="800">Edge Falloff</text><text x="48" y="854">Transfer direction</text><text x="48" y="908">Maximum Displacement</text>
+</g>
+<g fill="#45474b" stroke="#5a5c60"><rect x="390" y="610" width="296" height="38" rx="6"/><rect x="390" y="664" width="296" height="38" rx="6"/><rect x="390" y="718" width="296" height="38" rx="6"/><rect x="390" y="772" width="296" height="38" rx="6"/><rect x="390" y="826" width="296" height="38" rx="6"/><rect x="390" y="880" width="296" height="38" rx="6"/></g>
+<g fill="#eee" font-family="Arial,sans-serif" font-size="18"><text x="614" y="636">1.00</text><text x="614" y="690">1.00×</text><text x="614" y="744">1.00</text><text x="614" y="798">0.25</text><text x="474" y="852">Unidirectional</text><text x="614" y="906">0</text></g>
+<rect x="48" y="940" width="306" height="48" rx="7" fill="#477bbd"/><text x="119" y="971" fill="#fff" font-family="Arial,sans-serif" font-size="19" font-weight="600">Preview Effect</text>
+<rect x="370" y="940" width="316" height="48" rx="7" fill="#477bbd"/><text x="455" y="971" fill="#fff" font-family="Arial,sans-serif" font-size="19" font-weight="600">Apply Relief</text>
+<line x1="48" y1="1015" x2="686" y2="1015" stroke="#535559"/>
+<text x="48" y="1057" fill="#eeeeee" font-family="Arial,sans-serif" font-size="22" font-weight="600">M5. Mesh Inspection</text>
+<g fill="#4b4d50" stroke="#606267"><rect x="48" y="1075" width="638" height="48" rx="7"/><rect x="48" y="1131" width="638" height="48" rx="7"/><rect x="48" y="1187" width="638" height="48" rx="7"/><rect x="48" y="1243" width="638" height="48" rx="7"/></g>
+<g fill="#eeeeee" font-family="Arial,sans-serif" font-size="17"><text x="78" y="1105">Check Topology for Printing</text><text x="78" y="1161">Locate a Component…</text><text x="78" y="1217">Compare Target Before and After</text><text x="78" y="1273">Export Active Mesh as STL (mm)…</text></g>
+<text x="48" y="1335" fill="#eeeeee" font-family="Arial,sans-serif" font-size="22" font-weight="600">Target Subdivision</text>
+<rect x="48" y="1352" width="638" height="48" rx="7" fill="#4b4d50" stroke="#606267"/><text x="78" y="1382" fill="#eee" font-family="Arial,sans-serif" font-size="18">Diagnose Resolution</text>
+<text x="48" y="1442" fill="#c8c8c8" font-family="Arial,sans-serif" font-size="16">Simplified diagram; the report area is omitted.</text>
+<text x="48" y="1472" fill="#c8c8c8" font-family="Arial,sans-serif" font-size="16">The exact appearance varies with the theme and Blender version.</text>
+</svg>

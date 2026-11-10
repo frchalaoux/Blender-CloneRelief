@@ -25,6 +25,7 @@ faces. The profile is copied at 1× gain with an edge falloff. This render does
 not predict results on a real scan.
 
 - [PNG image](clone_relief_before_after.png)
+- [English 16:9 preview for Blender Extensions](clone_relief_before_after.en.png) — 1920 × 1080 pixels.
 - [Editable Blender scene](clone_relief_before_after.blend)
 - Generation script: [`scripts/create_before_after_example.py`](../../scripts/create_before_after_example.py)
 

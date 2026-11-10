@@ -45,30 +45,30 @@ même objet maillé :
 
 1. Sur une copie de travail et en **Edit Mode**, choisir l’ombrage **Solid** et
    désactiver **X-Ray** afin que la sélection ne traverse pas l’objet. Sélectionner
-   les faces d’une zone saine assez texturée, puis cliquer **Capture Source**.
+   les faces d’une zone saine assez texturée, puis cliquer **Capturer la source**.
    Le panneau donne le nombre de faces et de sommets capturés. Si tu
-   désélectionnes la zone ensuite, **Reselect Source** la rétablit.
+   désélectionnes la zone ensuite, **Resélectionner la source** la rétablit.
 
    ![Dans la scène de démonstration, seul le profil strié source est sélectionné en orange.](images/source-selection-demo.jpg)
 
    *Démonstration synthétique : la sélection orange est limitée au profil source; la cible à droite reste désélectionnée.*
 
-2. Sélectionner les faces de la zone cible, puis cliquer **Capture Target**.
+2. Sélectionner les faces de la zone cible, puis cliquer **Capturer la cible**.
    Les faces doivent former un morceau continu, relié par des arêtes. Si la
    sélection touche aussi de petits morceaux disjoints, l’outil garde le groupe
    dominant seulement s’il contient au moins deux fois plus de faces que tous
    les autres réunis; il affiche alors le nombre de faces écartées. Sinon, il
    refuse la capture. La source et la cible doivent être sans face commune.
-   **Reselect Target** rétablit ensuite la cible capturée, y compris après Apply.
+   **Resélectionner la cible** rétablit ensuite la cible capturée, y compris après Apply.
 
    ![Dans la scène de démonstration, seule la cible plane à droite est sélectionnée en orange.](images/target-selection-demo.jpg)
 
    *La source striée reste visible à gauche pour repérer les deux zones du même maillage.*
 
-3. Cliquer **Preview Effect**. L’aperçu ne modifie pas le maillage : il indique
+3. Cliquer **Prévisualiser l’effet**. L’aperçu ne modifie pas le maillage : il indique
    combien de sommets bougeraient et le déplacement maximal en millimètres.
    Vous pouvez modifier les réglages et refaire l’aperçu autant de fois que voulu;
-   chaque calcul repart de la géométrie mémorisée lors de **Capture Target**.
+   chaque calcul repart de la géométrie mémorisée lors de **Capturer la cible**.
 4. Si le panneau signale une cible trop grossière, lancer
    **Diagnostiquer la résolution**, puis **Densifier la cible…** et vérifier le
    nombre de faces estimé avant de confirmer. Densifier signifie ajouter des
@@ -76,22 +76,22 @@ même objet maillé :
    détails plus fins. La subdivision invalide les captures :
    recapturer source et cible, puis refaire l’aperçu.
 5. Si l’aperçu annonce un déplacement inférieur à **0,05 mm**, essayer le
-   **Relief Gain** suggéré ou capturer une source plus texturée. Refaire
+   **Gain du relief** suggéré ou capturer une source plus texturée. Refaire
    l’aperçu jusqu’à obtenir une amplitude adaptée au résultat recherché.
-6. Cliquer **Apply Relief**. Le panneau indique si l’opération a réussi, le
+6. Cliquer **Appliquer le relief**. Le panneau indique si l’opération a réussi, le
    nombre de sommets déplacés et leur déplacement maximal. La cible capturée
    reste la référence : vous pouvez changer les réglages, refaire l’aperçu et
-   cliquer de nouveau sur **Apply Relief**. Chaque application remplace le
+   cliquer de nouveau sur **Appliquer le relief**. Chaque application remplace le
    résultat précédent depuis les coordonnées capturées, sans empiler le relief.
    L’opération est annulable avec **Undo**.
 
-Pour traiter une autre zone, sélectionnez-la puis cliquez sur **Capture Target** :
+Pour traiter une autre zone, sélectionnez-la puis cliquez sur **Capturer la cible** :
 cette capture devient la nouvelle géométrie de départ. Une modification de
 topologie invalide toujours les captures et impose de recapturer source et
 cible. Après une application, les modifications manuelles des sommets de la
 cible seront remplacées par le prochain résultat calculé depuis la capture.
 
-Les commandes **Reselect Source** et **Reselect Target** restaurent les faces
+Les commandes **Resélectionner la source** et **Resélectionner la cible** restaurent les faces
 sauvegardées en mémoire sans refaire la capture ni modifier la géométrie. Elles
 nécessitent Edit Mode sur le même objet et une topologie inchangée. Les captures
 disparaissent à la fermeture du fichier ou au rechargement de l’add-on.
@@ -106,7 +106,7 @@ Le schéma ci-dessous présente les sections et commandes de l’onglet **Clone 
 actuelles. C’est un repère de lecture, pas une capture d’écran : Blender ajuste
 la mise en page selon la taille du panneau et son thème.
 
-![Schéma de l’onglet Clone Relief dans la barre latérale N](images/clone-relief-panel-guide.svg)
+![Schéma français de l’onglet Clone Relief dans la barre latérale N](images/clone-relief-panel-guide.svg)
 
 Une capture refusée avec plusieurs groupes indique le nombre de morceaux
 séparés par des arêtes. Garder uniquement le morceau souhaité et recapturer;
@@ -118,16 +118,16 @@ groupe dominant est retenu automatiquement, vérifier le nombre de faces
 
 | Réglage | Défaut | Effet |
 |---|---:|---|
-| Opacité sélection | 0,08 (8 %) | Réduit le remplissage orange des faces sélectionnées pour mieux voir la maille. Affecte la couleur de sélection des vues 3D pendant l’activation de l’add-on; la valeur de thème d’origine est restaurée à sa désactivation. |
-| Intensity | 1,00 | Copie le profil complet; une valeur plus faible réduit son amplitude. |
-| Relief Gain | 1,0× | Multiplie l’amplitude transférée; une valeur supérieure à 1 exagère le relief. Réglable jusqu’à 100×. |
-| Pattern Scale | 1,00 | Échelle physique du motif; 2,00 double sa longueur d’onde. |
-| Edge Falloff | 0,25 | Largeur relative du fondu depuis le bord cible. |
+| Opacité de sélection | 0,08 (8 %) | Réduit le remplissage orange des faces sélectionnées pour mieux voir la maille. Affecte la couleur de sélection des vues 3D pendant l’activation de l’add-on; la valeur de thème d’origine est restaurée à sa désactivation. |
+| Intensité | 1,00 | Copie le profil complet; une valeur plus faible réduit son amplitude. |
+| Gain du relief | 1,0× | Multiplie l’amplitude transférée; une valeur supérieure à 1 exagère le relief. Réglable jusqu’à 100×. |
+| Échelle du motif | 1,00 | Échelle physique du motif; 2,00 double sa longueur d’onde. |
+| Atténuation du bord | 0,25 | Largeur relative du fondu depuis le bord cible. |
 | Mode de transfert | Unidirectionnel | Copie le profil source en le décalant vers l’extérieur juste assez pour ne pas passer sous la cible. Le mode bidirectionnel conserve son profil signé autour du plan moyen. |
-| Maximum Displacement | 0 | Aucun plafond; une valeur positive limite le déplacement en unités de scène. |
+| Déplacement maximal | 0 | Aucun plafond; une valeur positive limite le déplacement en unités de scène. |
 
-**Preview Effect** calcule le résultat sans changer les coordonnées du maillage.
-**Apply Relief** est la seule de ces étapes qui déplace les sommets.
+**Prévisualiser l’effet** calcule le résultat sans changer les coordonnées du maillage.
+**Appliquer le relief** est la seule de ces étapes qui déplace les sommets.
 
 Pour copier le profil sans changer son amplitude, garder l’intensité à 1, le
 gain à 1 et l’échelle à 1. Le fondu atténue volontairement le déplacement
@@ -135,21 +135,22 @@ près du bord; réduire sa largeur si l’on veut limiter cette zone de raccord.
 
 Les messages distinguent réussite, faible amplitude, absence de sommet déplacé
 et erreur de capture ou de topologie. Ils sont présentés ligne par ligne dans
-le panneau juste sous les commandes **Preview Effect** et **Apply Relief**, dans
-une zone défilante; chaque ligne peut être sélectionnée, et
-**Copier le message** copie le texte complet. Une réussite donne le compte des
+le panneau juste sous les commandes **Prévisualiser l’effet** et
+**Appliquer le relief**, dans une zone défilante; chaque ligne peut être
+sélectionnée, et **Copier le message complet** copie le texte complet. Une
+réussite donne le compte des
 sommets modifiés et le déplacement maximal. Un résultat sous 0,05 mm est signalé comme très faible;
 ce seuil est un repère visuel, pas une garantie d’impression.
 
 ## Diagnostic et densification locale
 
-Après les captures source et cible, **Diagnose Resolution** compare le 90e
+Après les captures source et cible, **Diagnostiquer la résolution** compare le 90e
 percentile de longueur d’arête cible à la médiane de la source. Au-delà de
 `1,5×`, le panneau signale une cible potentiellement trop grossière et propose
 un nombre de coupes. Ce seuil est indicatif; il ne garantit pas que le motif
 transféré sera correctement échantillonné.
 
-**Subdivide Target…** ouvre une boîte de confirmation avec le nombre de coupes,
+**Densifier la cible…** ouvre une boîte de confirmation avec le nombre de coupes,
 une estimation prudente du nombre de faces et le plafond ajouté (250 000 par
 défaut). Vérifier l’estimation avant de confirmer. La subdivision conserve les
 positions des bords et peut subdiviser les faces voisines qui partagent les
@@ -205,7 +206,7 @@ Solid, Intersections, Degenerate, Thickness, Shells, Edge Sharp et Overhang.
 Le rapport Clone Relief reste utile pour repérer et localiser les composantes;
 il ne remplace pas ces contrôles.
 
-Après **Apply Relief**, cliquer **Comparer la cible avant/après** en Edit Mode
+Après **Appliquer le relief**, cliquer **Comparer la cible avant/après** en Edit Mode
 pour construire une paire temporaire de surfaces côte à côte depuis la cible
 capturée et le résultat courant. Le maillage de travail est masqué pendant la
 comparaison. Ces surfaces sont des copies ouvertes pour inspection visuelle,
@@ -241,9 +242,9 @@ travail, puis :
 1. Confirmer les dimensions physiques et l’échelle objet dans Blender.
 2. Choisir une zone source saine et une zone cible triangulée sur le même
    objet; éviter les bords ouverts, plis serrés et régions très courbes.
-3. Capturer les régions et lancer **Diagnose Resolution**. Consigner les
+3. Capturer les régions et lancer **Diagnostiquer la résolution**. Consigner les
    valeurs source/cible et l’estimation.
-4. Si la cible est sous-échantillonnée, choisir **Subdivide Target…**, vérifier
+4. Si la cible est sous-échantillonnée, choisir **Densifier la cible…**, vérifier
    le plafond et confirmer sur la copie.
 5. Recapturer les deux régions, appliquer les réglages par défaut, puis
    examiner le relief sous lumière rasante.

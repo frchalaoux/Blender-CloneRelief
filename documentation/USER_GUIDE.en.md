@@ -106,7 +106,7 @@ The diagram below shows the current sections and commands in the **Clone
 Relief** tab. It is a reading aid, not a screenshot: Blender adjusts the layout
 to the panel size and theme.
 
-![Diagram of the Clone Relief tab in the N sidebar](images/clone-relief-panel-guide.svg)
+![Diagram of the Clone Relief tab in the N sidebar](images/clone-relief-panel-guide.en.svg)
 
 A rejected capture with multiple groups reports how many edge-connected
 patches were selected. Keep only the intended patch and capture again; a

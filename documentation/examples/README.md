@@ -18,42 +18,43 @@ plane avant transfert et le résultat après transfert.
 ![Détail de la cible après transfert](../images/target-after-detail.png)
 
 *Le motif source apparaît sur la cible après transfert.*
-Elle utilise les opérateurs Clone Relief dans Blender 4.5.8 : **Intensity 1,0**,
-**Relief Gain 1×**, **Pattern Scale 1,0**, **Edge Falloff 0,10** et le mode
+Elle utilise les opérateurs Clone Relief dans Blender 4.5.8 : **Intensité 1,0**,
+**Gain du relief 1×**, **Échelle du motif 1,0**, **Atténuation du bord 0,10** et le mode
 unidirectionnel par défaut. La source est un motif sinusoïdal régulier et la
 cible comporte 20 736 faces sur une tuile de 30 mm; la source a 5 184 faces.
 Le profil est copié à gain 1×, avec un fondu de bord. Ce rendu ne prédit pas le
 résultat sur un scan réel.
 
 - [Image PNG](clone_relief_before_after.png)
+- [Aperçu anglais 16:9 pour Blender Extensions](clone_relief_before_after.en.png) — 1920 × 1080 pixels.
 - [Scène Blender modifiable](clone_relief_before_after.blend)
 - Script de génération : [`scripts/create_before_after_example.py`](../../scripts/create_before_after_example.py)
 
 ## Essayer les captures dans Blender
 
 La scène s’ouvre sur un maillage de test actif en **Edit Mode**, en sélection de
-faces. Ses réglages sont déjà **Intensity 1,0**, **Relief Gain 1×**,
-**Pattern Scale 1,0**, **Edge Falloff 0,10** et le mode unidirectionnel.
+faces. Ses réglages sont déjà **Intensité 1,0**, **Gain du relief 1×**,
+**Échelle du motif 1,0**, **Atténuation du bord 0,10** et le mode unidirectionnel.
 L’opacité de sélection est réglée à **8 %**.
 La source striée est à gauche
 (ambre) et la cible plane à droite (vert).
 Ces deux zones sont deux îlots du même objet.
 
 1. Place le pointeur sur la source à gauche et appuie sur **L** pour sélectionner
-   son îlot connecté. Clique **Capture Source** dans le panneau Clone Relief.
+   son îlot connecté. Clique **Capturer la source** dans le panneau Clone Relief.
 2. Désélectionne avec **Option+A**, place le pointeur sur la cible à droite et
-   appuie sur **L**. Clique **Capture Target**.
-3. Règle **Intensity** à `1,0`, **Relief Gain** à `1` et **Edge Falloff** à
-   `0,10`, puis clique **Preview Effect** et **Apply Relief**.
+   appuie sur **L**. Clique **Capturer la cible**.
+3. Règle **Intensité** à `1,0`, **Gain du relief** à `1` et **Atténuation du bord** à
+   `0,10`, puis clique **Prévisualiser l’effet** et **Appliquer le relief**.
 
-Après **Capture Target**, tu peux changer les réglages, refaire l’aperçu et
+Après **Capturer la cible**, tu peux changer les réglages, refaire l’aperçu et
 appliquer plusieurs fois. Chaque application repart de la géométrie initiale
 capturée et remplace le résultat précédent. Capture une nouvelle cible
 uniquement pour changer de zone ou après une modification de topologie.
-Le réglage **Opacité sélection** dans le panneau réduit le remplissage orange
+Le réglage **Opacité de sélection** dans le panneau réduit le remplissage orange
 des faces sélectionnées dans la vue 3D.
 
-**Apply Relief** modifie la cible du maillage `TEST` sur place. L’objet
+**Appliquer le relief** modifie la cible du maillage `TEST` sur place. L’objet
 `After - transferred relief` est une pièce de présentation générée par le
 script, et ne suit pas les applications faites ensuite dans `TEST`. Pour
 comparer les pièces de présentation dans la vue 3D, masquer `TEST` et afficher

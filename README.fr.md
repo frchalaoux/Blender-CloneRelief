@@ -15,6 +15,8 @@ permet de régler le transfert avant de l’appliquer.
 > Clone Relief est un prototype. Il n’est pas encore qualifié pour garantir
 > qu’un maillage soit imprimable.
 
+**Licence :** [GNU GPL version 3 ou ultérieure](LICENSE).
+
 ## Sommaire
 
 - [Compatibilité et état](#compatibilité-et-état)
@@ -77,13 +79,13 @@ Le [guide utilisateur](documentation/USER_GUIDE.md) décrit le parcours complet 
 Travaille sur une copie du maillage. Les captures et le transfert se font en
 **Edit Mode**, sur le même objet :
 
-1. Sélectionne les faces d’une zone source saine, puis clique **Capture Source**.
-2. Sélectionne les faces de la zone à corriger, puis clique **Capture Target**.
-3. Clique **Preview Effect**. Ajuste les paramètres et prévisualise à nouveau
-   si nécessaire; le compte rendu apparaît sous **Preview Effect** et
-   **Apply Relief**.
-4. Clique **Apply Relief**. Tu peux modifier les paramètres et réappliquer :
-   chaque application repart de la géométrie enregistrée par **Capture Target**.
+1. Sélectionne les faces d’une zone source saine, puis clique **Capturer la source**.
+2. Sélectionne les faces de la zone à corriger, puis clique **Capturer la cible**.
+3. Clique **Prévisualiser l’effet**. Ajuste les paramètres et prévisualise à nouveau
+   si nécessaire; le compte rendu apparaît sous **Prévisualiser l’effet** et
+   **Appliquer le relief**.
+4. Clique **Appliquer le relief**. Tu peux modifier les paramètres et réappliquer :
+   chaque application repart de la géométrie enregistrée par **Capturer la cible**.
    **Undo** annule l’application.
 5. Dans la section M5, contrôle la topologie et, si besoin, utilise
    **Localiser une composante…** pour sélectionner un groupe déconnecté et

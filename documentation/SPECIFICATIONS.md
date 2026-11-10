@@ -39,8 +39,8 @@ Le résultat doit être porté par la géométrie exportée (STL/3MF), et non pa
 ## 3. Parcours utilisateur attendu
 
 1. L’utilisateur sélectionne l’objet maillé à traiter.
-2. En Edit Mode, il sélectionne des faces saines et lance **Capture Source**.
-3. Il sélectionne les faces cibles sur le même objet et lance **Capture Target**.
+2. En Edit Mode, il sélectionne des faces saines et lance **Capturer la source**.
+3. Il sélectionne les faces cibles sur le même objet et lance **Capturer la cible**.
 4. Il prévisualise le nombre de sommets concernés et l’amplitude maximale sans modifier le maillage.
 5. Il règle l’intensité, le gain d’amplitude, l’échelle du motif, le fondu de bord et l’opacité du remplissage de sélection.
 6. Il applique le transfert en une opération annulable et peut restaurer l’état précédent avec Undo.
@@ -52,7 +52,7 @@ L’interface actuelle est le panneau **Clone Relief** dans la barre latérale N
 
 | Réglage | Valeur initiale | Définition |
 |---|---:|---|
-| Opacité sélection | 0,08 | Alpha appliqué au remplissage orange des faces sélectionnées dans la vue 3D; restaurer la valeur de thème antérieure à la désactivation de l’add-on. |
+| Opacité de sélection | 0,08 | Alpha appliqué au remplissage orange des faces sélectionnées dans la vue 3D; restaurer la valeur de thème antérieure à la désactivation de l’add-on. |
 | Intensité | 1,00 (100 %) | Copie intégrale du profil source. Une valeur plus faible réduit l’écart au profil copié. |
 | Gain | 1,00× | Multiplicateur séparé de l’intensité; les valeurs supérieures à 1 exagèrent le profil. |
 | Échelle du motif | 1,00 (100 %) | Échelle physique du motif transféré. La convention doit être documentée et vérifiée par test. |

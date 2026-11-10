@@ -15,6 +15,8 @@ and lets you tune the transfer before applying it.
 > Clone Relief is a prototype. It has not been qualified to guarantee that a
 > mesh is printable.
 
+**License:** [GNU GPL v3 or later](LICENSE).
+
 ## Contents
 
 - [Compatibility and status](#compatibility-and-status)

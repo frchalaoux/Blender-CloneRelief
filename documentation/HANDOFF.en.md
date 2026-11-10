@@ -2,15 +2,18 @@
 
 [English](HANDOFF.en.md) · [Français](HANDOFF.md)
 
-- **Date:** November 9, 2026
+- **Date:** November 10, 2026
 - **Repository:** Blender-CloneRelief, local `staging` branch
 - **Target:** Blender 4.5.8 LTS on Intel macOS; trackpad use, no numeric keypad
-- **Status:** M0–M5 are implemented; M6 prepares qualification of the result
-  for 3D printing. Version 0.2.0 adds FR/EN interface localization following
-  Blender preferences. The user confirmed the first localized preview; a later
-  screenshot revealed buttons still in English, now explicitly translated in
-  code. This final correction still needs Blender verification. The result is
-  not qualified for printing.
+- **Status:** public release v0.2.0 is available. `staging`, the tag, and the
+  release point to `0e918fd0f6589b45ab3a823bce99d82d280b3767`. The
+  `blender_clone_relief_0.2.0.zip` archive has SHA-256
+  `93d546331d7e725e89573fbfb3df984bb317c5e29dbd4197ebd70868933f094c`.
+  The user confirmed the labels in Blender in both French and English. A
+  representative print on the Pika copy was completed and reported correct so
+  far; detailed settings were not recorded. This result is not a general
+  printability guarantee.
+- **Release:** [Clone Relief v0.2.0 — FR/EN interface](https://github.com/frchalaoux/Blender-CloneRelief/releases/tag/v0.2.0)
 
 ## Current goal and functional decision
 
@@ -48,7 +51,7 @@ does not reconstruct details missing from the scan.
 - **Example:** `documentation/examples/clone_relief_before_after.blend` and its
   PNG render show the sampled source profile, flat target before transfer, and
   target after transfer. Settings: intensity 1, gain 1, scale 1, falloff 0.1.
-- **Local M5:** non-mutating topology audit, temporary comparison of the
+- **M5:** non-mutating topology audit, temporary comparison of the
   captured target before/after Apply, and STL export limited to the active
   object, converting via `scale_length` to millimeters. The audit does not
   inspect self-intersections or internal surfaces. The installed Blender
@@ -58,11 +61,47 @@ does not reconstruct details missing from the scan.
   Source/Target** restore captured faces in Edit Mode while the object and
   topology still match. **Locate a Component…** lets the user choose a group by
   face count, selects it, and frames the view without changing its geometry.
-- **FR/EN localization:** version 0.2.0 centralizes visible text and follows
-  Blender's interface language. The first preview was confirmed, but a later
-  screenshot showed that explicitly supplied button labels did not all follow
-  the selected language. The code now routes them through the catalog; this
-  final correction still needs Blender verification.
+- **FR/EN localization:** `src/clone_relief/i18n.py` centralizes visible text;
+  explicitly drawn buttons also use the catalog. The user confirmed the French
+  preview.
+
+## Validation and resume point
+
+- The user confirmed the French preview displayed the panel correctly after
+  button labels were fixed; public release v0.2.0 contains that code.
+- Python compilation, version consistency in the ZIP, archive contents, and
+  `git diff --check` were verified before the commit. No pytest suite or
+  automated Blender integration test was run for this release.
+- GitHub confirms `staging`, `v0.2.0`, and the release point to the commit
+  listed above, and the asset SHA-256 matches the published digest.
+- The user confirmed that the v0.2.0 labels are correct in Blender's English
+  interface.
+- The user confirms a representative print of the result on the Pika copy was
+  completed and is correct so far. Printer, material, slicer, profile, and
+  measurements were not recorded.
+- The user chose and authorized GPL-3.0-or-later for publication on Blender
+  Extensions. The manifest was added and `dist/clone_relief-0.2.0.zip` was
+  built with Blender 4.5.8; source and archive manifest validation pass.
+  SHA-256: `9cbad4b0a0611fc87246b02c8c592efc948317a81e0791765013ce99e82bb7dd`.
+- The user confirms the extension package installation test works. On November
+  10, 2026, the user reports that Blender is now reviewing the submission; this
+  review status is user-reported and has not been independently verified.
+- Draft description: “Clone Relief transfers the surface profile selected in
+  one region of a mesh onto a selected target region of the same mesh. Capture
+  source and target faces, preview the transfer, tune intensity, gain, scale,
+  edge falloff and direction, then apply. Includes topology and component
+  diagnostics, before/after comparison, bounded local densification, and
+  selected-object STL export in millimeters. It does not guarantee
+  printability.”
+- A restrained English 16:9 preview at 1920 × 1080 is ready for the listing:
+  `documentation/examples/clone_relief_before_after.en.png`. It shows the
+  source profile, flat target before transfer, and result afterward.
+- The main Featured Image is ready as a 1920 × 1080 PNG at
+  `documentation/images/clone-relief-featured-image-1920x1080.png`, showing the
+  source profile transferred onto a visibly curved target, with the relief
+  following its curvature.
+- Next: await Blender Extensions moderation, record the result, and address
+  any feedback.
 
 On November 9, a traceback while drawing the panel indicated that icon
 `MOD_DIFFERENCE` does not exist in Blender 4.5. This error stopped the M5
@@ -76,7 +115,11 @@ check analyzes only the active object; the locator requires Edit Mode and at
 least two components in that object. See the detailed procedure in the
 [User Guide](USER_GUIDE.en.md#step-by-step-procedure).
 
-## Blender state at handoff
+## Last observed Blender project state — November 7, 2026
+
+No newer Blender file or scene state has been confirmed since these
+observations. Since then, the user confirmed the v0.2.0 English labels and a
+Pika print that is correct so far; the print settings still need to be recorded.
 
 The last file observed in Blender is the Pika file
 `/Users/frchalaoux/Documents/print3D/Pika/tests/Scans/butternot/butternote.blend`.
@@ -111,11 +154,12 @@ loaded in the current session; the locator was used to identify the two
 components that the user removed. Recapture source and target if they were
 lost on reload.
 
-**Warning:** the Blender bridge loads the add-on from
+**Installation context observed November 7:** the Blender bridge loaded the add-on from
 `~/Library/Application Support/Blender/4.5/scripts/addons/clone_relief/`, while
-the reference code is in `src/clone_relief/`. The
+the reference code is in `src/clone_relief/`. At that time the
 `dist/blender_clone_relief_0.1.0.zip` archive was rebuilt and the Blender
 installation folder synchronized. The user saved the Pika file after cleanup.
+The current public release is v0.2.0.
 
 M6 reuses the 3D Print Toolbox for geometric manufacturability checks, then
 qualifies one identified print case without making a general promise. The
@@ -224,11 +268,8 @@ or checking topology/manifoldness for printing.
 
 ## Next actions
 
-1. Compare before/after on the Pika copy, then inspect the faces flagged as
-   intersecting and near-zero-area; compare the 5,651 thin faces with the
-   chosen process and interpret overhangs for the print orientation.
-2. Export only the final object as STL and check dimensions and layer preview
-   in the chosen slicer.
-3. Record and inspect a representative print using the M6 protocol.
+1. Await the Blender Extensions review result and address any feedback.
+2. Complete the M6 print record with available details later.
 
-Do not describe the result as print-reliable before this real-world validation.
+The completed print is encouraging for this case and configuration; it does
+not guarantee printability for other meshes or configurations.

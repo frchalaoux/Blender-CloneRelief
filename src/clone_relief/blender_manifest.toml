@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+id = "clone_relief"
+version = "0.2.0"
+name = "Clone Relief"
+tagline = "Transfer surface relief between mesh regions"
+maintainer = "François-Régis Chalaoux"
+type = "add-on"
+website = "https://github.com/frchalaoux/Blender-CloneRelief"
+support = "https://github.com/frchalaoux/Blender-CloneRelief/issues"
+tags = ["3D View", "Mesh", "Modeling"]
+blender_version_min = "4.5.0"
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = ["2026 François-Régis Chalaoux"]
+
+[permissions]
+files = "Export selected mesh to STL files"

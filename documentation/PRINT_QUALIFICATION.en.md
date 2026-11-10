@@ -10,8 +10,9 @@ configurations. A Clone Relief report with no detected defects does not
 constitute a printability guarantee.
 
 The first target is the workflow applied to a copy of the Pika squash scan. The
-original file must remain intact. The relief transfer, before/after comparison,
-and STL export for this result have not yet been validated end to end.
+original file must remain intact. The user confirms that a representative print
+of the result was made and that everything is correct so far; detailed settings
+have not been recorded.
 
 ## Required steps and evidence
 
@@ -71,7 +72,11 @@ to millimeters.
 | Check thickness for the process and intended use | Not done |
 | Export only the final object and check imported dimensions | Not done |
 | Layer preview in an identified slicer | Not done |
-| Representative print and inspection | Not done |
+| Representative print and inspection | Done; the user reports that everything is correct so far. Printer, material, profile, and slicer were not recorded. |
+
+This validates that print only. The fabrication settings and detailed evidence
+(measured dimensions, settings, and inspection) were not provided; record them
+if the qualification needs to be reproducible.
 
 Record manual validations with the date, Blender and slicer versions, working
 file identifier, exported object, machine, material, and profile. Do not publish
@@ -162,7 +167,8 @@ layer-by-layer preview.
 
 ## Conclusion criterion
 
-The workflow can be considered qualified for this specific case when all
-three steps are completed without a blocking defect and their evidence is
-recorded. This does not support a claim that Clone Relief alone guarantees
-another mesh will be printable.
+The representative print was completed and reported correct so far. To
+document a reproducible qualification for this case, also record the model and
+exported object, slicer, printer, material, profile, and checks performed. This
+does not support a claim that Clone Relief alone guarantees another mesh will
+be printable.

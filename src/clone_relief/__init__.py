@@ -4,7 +4,7 @@ __version__ = "0.2.0"
 
 bl_info = {
     "name": "Clone Relief",
-    "author": "Blender-CloneRelief contributors",
+    "author": "François-Régis Chalaoux",
     "version": (0, 2, 0),
     "blender": (4, 5, 8),
     "location": "View3D > Sidebar > Clone Relief",
