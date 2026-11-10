@@ -12,6 +12,7 @@ French documents remain the reference.
 - [Project Overview](PROJECT_OVERVIEW.en.md) · [Français](PROJECT_OVERVIEW.md) — introduces Clone Relief to users and developers, including its use case, limitations, and quick workflow.
 - [Specifications](SPECIFICATIONS.en.md) · [Français](SPECIFICATIONS.md) — the team's product reference: goals, requirements, decisions, and acceptance criteria.
 - [Development](DEVELOPMENT.en.md) · [Français](DEVELOPMENT.md) — technical guide for contributors: environment, architecture, commands, and known limitations.
+- [Algorithms](ALGORITHMS.en.md) · [Français](ALGORITHMS.md) — step-by-step description of capture, transfer, densification, and topology algorithms, with flowcharts.
 - [User Guide](USER_GUIDE.en.md) · [Français](USER_GUIDE.md) — operator guide: installation, interface controls, and Blender workflow.
 - [Print Qualification](PRINT_QUALIFICATION.en.md) · [Français](PRINT_QUALIFICATION.md) — protocol and evidence for evaluating results in Blender, a slicer, and a physical print.
 - [Before/after example](examples/README.en.md) · [Français](examples/README.md) — explains the reproducible Blender scene and images illustrating the relief transfer.

@@ -110,6 +110,9 @@ l’inspection; efface-la et reviens au maillage de travail avant l’export.
   rendu synthétique reproductible.
 - [Développement](documentation/DEVELOPMENT.md) — architecture, environnement,
   commandes de développement et validations.
+- [Algorithmes](documentation/ALGORITHMS.md) · [English](documentation/ALGORITHMS.en.md) — déroulé pas à pas du calcul du
+  transfert, de l’aperçu, de la densification et du contrôle topologique, avec
+  diagrammes de flux.
 
 ## Développement
 

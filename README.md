@@ -101,6 +101,7 @@ clear it and return to the working mesh before exporting.
 - [3D Print Toolbox](https://extensions.blender.org/add-ons/print3d-toolbox/) — Blender extension for inspecting meshes intended for 3D printing.
 - [Before/after example](documentation/examples/README.en.md) — reproducible Blender scene and synthetic comparison.
 - [Development guide](documentation/DEVELOPMENT.en.md) — architecture, environment, and development checks.
+- [Algorithm walkthrough](documentation/ALGORITHMS.en.md) · [Français](documentation/ALGORITHMS.md) — step-by-step description of the transfer, preview, densification, and topology check, with flowcharts.
 - [English documentation index and language selector](documentation/README.en.md).
 
 ## Development
