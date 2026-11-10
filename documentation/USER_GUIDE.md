@@ -2,9 +2,10 @@
 
 [English translation](USER_GUIDE.en.md)
 
-**Prototype :** version 0.2.0 pour Blender 4.5.8 LTS. Le contrôle M5 a été
-utilisé sur un scan Pika, mais le transfert n’y a pas encore été validé et
-l’add-on n’est pas qualifié pour l’impression 3D.
+**Prototype :** version 0.2.0 pour Blender 4.5.8 LTS. L’utilisateur confirme
+qu’un essai sur une copie du scan Pika, suivi d’une impression représentative,
+est correct à ce jour. Les paramètres détaillés ne sont pas consignés; cet
+essai ne garantit pas l’imprimabilité d’autres modèles ou configurations.
 
 **Langue :** l’interface de Clone Relief suit la langue choisie dans Blender
 en français ou en anglais. Pour afficher les textes français, active

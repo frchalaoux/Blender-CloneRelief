@@ -3,16 +3,12 @@
 [English translation](SPECIFICATIONS.en.md)
 
 - **Version :** 0.1 — mise à jour fonctionnelle du 7 novembre 2026
-- **État :** spécification de référence; M0–M4 réalisés. M5 est implémenté;
-  M6 prépare la qualification du résultat sur un cas d’impression défini. Le contrôle
-  topologique et la localisation de composantes M5 ont été utilisés sur le scan
-  Pika; deux composantes internes ont été supprimées, puis un audit a confirmé
-  une composante sans défaut topologique détecté. La comparaison avant/après,
-  l’export STL et la qualification complète pour l’impression restent à faire.
-- **Source de cadrage :** [`HANDOFF.md`](HANDOFF.md)
 - **Projet :** add-on Python pour Blender 4.5.8, macOS Intel
 
-Ce document transforme le handoff en exigences produit et critères de validation. Les 22 tests pytest et le smoke test synthétique avaient réussi sur l’état M4 dans Blender 4.5.8; ils n’ont pas été relancés après M5. Le contrôle topologique M5 a été exécuté après suppression des composantes internes, mais le transfert reste à valider visuellement sur une copie du scan Pika.
+Ce document est la référence produit de l’équipe : il décrit les objectifs,
+exigences, décisions et critères de validation de Clone Relief. Il définit le
+comportement attendu; les résultats des essais et l’avancement du développement
+se consignent séparément.
 
 ## 1. Objectif
 
@@ -206,4 +202,4 @@ Le dernier critère est une validation empirique sur données réelles; il ne pe
 - Validation sur une copie du scan Pika seulement après les tests synthétiques et l’intégration minimale.
 - Ne pas qualifier l’outil de fiable pour l’impression avant inspection du maillage résultant et export de contrôle.
 
-Les commandes proposées dans le handoff sont `python -m pytest -q` et, pour l’intégration, le lancement de Blender en arrière-plan avec `scripts/blender_smoke_test.py`. Elles devront être ajustées à l’environnement effectivement installé.
+Les commandes de test sont `python -m pytest -q` et, pour l’intégration, le lancement de Blender en arrière-plan avec `scripts/blender_smoke_test.py`. Elles devront être ajustées à l’environnement effectivement installé.

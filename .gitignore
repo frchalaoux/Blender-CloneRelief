@@ -8,6 +8,8 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+documentation/HANDOFF.md
+documentation/HANDOFF.en.md
 documentation/SCAN_WORKFLOW_HANDOFF.md
 
 documentation/SCAN_WORKFLOW_HANDOFF.en.md

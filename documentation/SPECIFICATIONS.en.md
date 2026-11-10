@@ -3,20 +3,11 @@
 [English](SPECIFICATIONS.en.md) · [Français](SPECIFICATIONS.md)
 
 - **Version:** 0.1 — functional update dated November 7, 2026
-- **Status:** reference specification; M0–M4 completed. M5 is implemented;
-  M6 prepares qualification of a result for a defined print case. The M5
-  topology check and component locator have been used on the Pika scan; two
-  internal components were removed, then an audit reported one component with
-  no detected topological defects. Before/after comparison, STL export, and
-  full print qualification remain to be done.
-- **Scoping source:** [`HANDOFF.en.md`](HANDOFF.en.md)
 - **Project:** Python add-on for Blender 4.5.8, Intel macOS
 
-This document turns the handoff into product requirements and validation
-criteria. The 22 pytest tests and synthetic smoke test had passed on the M4
-state in Blender 4.5.8; they have not been rerun after M5. The M5 topology
-check was run after the internal components were removed, but the transfer
-still needs visual validation on a copy of the Pika scan.
+This document is the team's product reference for Clone Relief's goals,
+requirements, decisions, and validation criteria. It defines expected
+behavior; test results and development progress are recorded separately.
 
 ## 1. Goal
 
@@ -279,6 +270,6 @@ cannot replace it.
 - Validate on a copy of the Pika scan only after synthetic tests and minimal integration.
 - Do not describe the tool as reliable for printing before inspecting the resulting mesh and a check export.
 
-The handoff suggests `python -m pytest -q` and, for integration, launching
+The test commands are `python -m pytest -q` and, for integration, launching
 Blender in the background with `scripts/blender_smoke_test.py`. Adjust these
 commands to the environment actually installed.

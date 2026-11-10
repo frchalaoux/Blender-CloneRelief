@@ -9,11 +9,14 @@ French documents remain the reference.
 
 ## Documents
 
-- [Project Overview](PROJECT_OVERVIEW.en.md) · [Français](PROJECT_OVERVIEW.md) — introduction for users and developers, quick workflow, and getting-started links.
-- [HANDOFF.en.md](HANDOFF.en.md) — current project context, state, and next actions.
-- [SPECIFICATIONS.en.md](SPECIFICATIONS.en.md) — product goals, requirements, and acceptance criteria.
-- [DEVELOPMENT.en.md](DEVELOPMENT.en.md) — environment, M1 math architecture, commands, and limitations.
-- [USER_GUIDE.en.md](USER_GUIDE.en.md) — macOS installation, panel, illustrated workflow, and validation on a copy.
-- [PRINT_QUALIFICATION.en.md](PRINT_QUALIFICATION.en.md) — qualification protocol using the 3D Print Toolbox, a slicer, and a representative print.
-- [Before/after example](examples/README.en.md) — synthetic visual comparison and reproducible Blender scene.
+- [Project Overview](PROJECT_OVERVIEW.en.md) · [Français](PROJECT_OVERVIEW.md) — introduces Clone Relief to users and developers, including its use case, limitations, and quick workflow.
+- [Specifications](SPECIFICATIONS.en.md) · [Français](SPECIFICATIONS.md) — the team's product reference: goals, requirements, decisions, and acceptance criteria.
+- [Development](DEVELOPMENT.en.md) · [Français](DEVELOPMENT.md) — technical guide for contributors: environment, architecture, commands, and known limitations.
+- [User Guide](USER_GUIDE.en.md) · [Français](USER_GUIDE.md) — operator guide: installation, interface controls, and Blender workflow.
+- [Print Qualification](PRINT_QUALIFICATION.en.md) · [Français](PRINT_QUALIFICATION.md) — protocol and evidence for evaluating results in Blender, a slicer, and a physical print.
+- [Before/after example](examples/README.en.md) · [Français](examples/README.md) — explains the reproducible Blender scene and images illustrating the relief transfer.
+
+`HANDOFF.md` is a personal development and resume note. It is not a product
+reference document and is not tracked by Git.
+
 - [French documentation index](README.md).

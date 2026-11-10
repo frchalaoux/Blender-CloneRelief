@@ -102,20 +102,21 @@ longueur d’onde.
 - Une cible sous-échantillonnée ne peut pas représenter finement le motif; la
   densification locale M3 existe, mais n’a pas encore été éprouvée sur un grand
   scan réel.
-- Le noyau n’a pas encore été validé sur la courge scannée ni qualifié pour
-  l’impression 3D.
+- L’utilisateur a confirmé qu’un essai sur la copie du scan Pika, suivi d’une
+  impression représentative, est correct à ce jour. Les paramètres détaillés
+  de fabrication ne sont pas consignés; cette validation ne se généralise pas
+  à d’autres modèles ou configurations. Voir
+  [Qualification pour l’impression](PRINT_QUALIFICATION.md).
 - Le contrôle topologique M5 et le localisateur de composantes ont été utilisés
   sur le scan Pika; après suppression de deux composantes internes, l’audit a
-  confirmé un seul groupe sans défaut topologique détecté. La comparaison
-  avant/après et l’export STL, notamment ses dimensions dans un trancheur,
-  restent à valider. Le contrôle n’analyse ni les auto-intersections ni les
-  surfaces internes.
+  confirmé un seul groupe sans défaut topologique détecté. Le contrôle
+  n’analyse ni les auto-intersections ni les surfaces internes.
 - M6 réutilise le 3D Print Toolbox pour l’analyse géométrique de fabricabilité
   plutôt que de réimplémenter ses contrôles. Clone Relief garde son résumé
-  topologique et son localisateur de composantes. Le protocole de qualification
-  d’un cas concret (scan Pika, trancheur et impression) est dans
-  [Qualification pour l’impression](PRINT_QUALIFICATION.md); ces validations
-  restent à effectuer.
+  topologique et son localisateur de composantes. Le protocole et les preuves
+  déclarées pour le cas Pika sont consignés dans
+  [Qualification pour l’impression](PRINT_QUALIFICATION.md); le trancheur et
+  les paramètres détaillés n’ont pas été consignés.
 
 ## Smoke test Blender
 

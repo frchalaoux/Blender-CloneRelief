@@ -50,9 +50,9 @@ The BVH is built once per application and reused for target samples. Edge fallof
 - Preliminary Pika scan measurements predate the switch to copying the complete profile; they do not characterize the current algorithm and must be repeated during validation on a copy.
 - Highly curved or distorted regions may project poorly into one tangent frame.
 - An undersampled target cannot represent the pattern in detail. M3 local densification exists but has not been tested on a large real scan.
-- The core has not yet been validated on the scanned squash or qualified for 3D printing.
-- M5’s topology check and component locator have been used on the Pika scan. After two internal components were removed, the audit reported one component and no detected topological defects. The before/after comparison and STL export, including dimensions in a slicer, still need validation. The check does not inspect self-intersections or internal surfaces.
-- M6 reuses the 3D Print Toolbox for manufacturability geometry checks rather than reimplementing them. Clone Relief retains its topology summary and component locator. The protocol for qualifying one concrete case (Pika scan, slicer, and print) is in the [Print Qualification Protocol](PRINT_QUALIFICATION.en.md); these validations remain to be done.
+- The user reports that a representative print made from the Pika scan copy is correct so far. Detailed manufacturing settings have not been recorded, so this result does not generalize to other models or configurations. See the [Print Qualification Protocol](PRINT_QUALIFICATION.en.md).
+- M5’s topology check and component locator have been used on the Pika scan. After two internal components were removed, the audit reported one component and no detected topological defects. The check does not inspect self-intersections or internal surfaces.
+- M6 reuses the 3D Print Toolbox for manufacturability geometry checks rather than reimplementing them. Clone Relief retains its topology summary and component locator. The protocol and reported evidence for the Pika case are in the [Print Qualification Protocol](PRINT_QUALIFICATION.en.md); the slicer and detailed settings have not been recorded.
 
 ## Blender smoke test
 

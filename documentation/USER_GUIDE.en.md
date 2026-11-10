@@ -2,9 +2,10 @@
 
 [English](USER_GUIDE.en.md) · [Français](USER_GUIDE.md)
 
-**Prototype:** version 0.2.0 for Blender 4.5.8 LTS. The M5 check has been
-used on a Pika scan, but the relief transfer has not yet been validated on it,
-and the add-on is not qualified for 3D printing.
+**Prototype:** version 0.2.0 for Blender 4.5.8 LTS. The user confirms that a
+test on a copy of the Pika scan, followed by a representative print, is correct
+so far. Detailed settings are not recorded; this test does not guarantee that
+other models or configurations are printable.
 
 **Language:** The add-on interface follows Blender's selected language in
 English and French. To show French, enable **Interface** under **Edit →
